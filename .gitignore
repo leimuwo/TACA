@@ -1,1 +1,32 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python and tooling caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# External data and generated outputs
+data/local/
+outputs/*
+!outputs/README.md
+!outputs/manifests/
+!outputs/manifests/**
+checkpoints/
+models/
+logs/
+
+# Local worktrees
 .worktrees/
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
