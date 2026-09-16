@@ -1,0 +1,5 @@
+[datasets]
+swe_raw_jsonl = "SWE-agent-trajectories/data_jsonl"
+swe_selected_500 = "SWE-agent-trajectories/test_data/selected_500_json"
+swe_thought_intent = "SWE-agent-trajectories/test_data/thought_intent"
+kimi_selected = "SWE-agent-trajectories/test_data/kimi_selected_json"
