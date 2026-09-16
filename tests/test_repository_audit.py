@@ -75,6 +75,25 @@ class RepositoryAuditTests(unittest.TestCase):
 
         self.assertEqual([issue.code for issue in issues], ["forbidden_path"])
 
+    def test_allows_environment_lookup_but_rejects_literal_python_secret(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            initialize_git(root)
+            (root / "safe.py").write_text(
+                'api_key = os.environ.get("INTENT_API_KEY")\n', encoding="utf-8"
+            )
+            (root / "unsafe.py").write_text(
+                'api_key = "sk-test-literal-value"\n', encoding="utf-8"
+            )
+            run_git(root, "add", ".")
+
+            issues = audit_repository(root)
+
+        self.assertEqual(
+            [(issue.code, issue.path) for issue in issues],
+            [("possible_secret", "unsafe.py")],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

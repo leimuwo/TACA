@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 from dataclasses import dataclass
@@ -71,8 +72,20 @@ def _contains_secret(text: str, suffix: str) -> bool:
         if not match or not CREDENTIAL_NAME_RE.search(match.group("name")):
             continue
         value = match.group("value").strip().strip("\"'")
-        if value and "example.invalid" not in value and value not in {"<secret>", "<api-key>"}:
-            return True
+        if not value or "example.invalid" in value or value in {"<secret>", "<api-key>"}:
+            continue
+        if suffix.lower() == ".py":
+            expression = match.group("value").strip().rstrip(",")
+            if expression.startswith(("os.environ", "os.getenv", "environ.get")):
+                continue
+            try:
+                literal = ast.literal_eval(expression)
+            except (SyntaxError, ValueError):
+                continue
+            if isinstance(literal, str) and literal.strip():
+                return True
+            continue
+        return True
     return False
 
 
