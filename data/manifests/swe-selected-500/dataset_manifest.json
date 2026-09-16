@@ -1,0 +1,193 @@
+{
+  "file_count": 15,
+  "files": [
+    {
+      "bytes": 480478296,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00000-of-00012.jsonl",
+      "sha256": "ced855e3ccc193fa005edcc33b0a312fbce9b6a75efb0b38ff3553eac1d2bf3b"
+    },
+    {
+      "bytes": 510511979,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00001-of-00012.jsonl",
+      "sha256": "b447675e6d94b97e2ee2897500160bfd640689e877b396ab4ddbc6439998bf09"
+    },
+    {
+      "bytes": 497821045,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00002-of-00012.jsonl",
+      "sha256": "4c754b1d0c8042bb8e1feb1d62513d2635ca0cdbd4168a8edee74003c466cd3e"
+    },
+    {
+      "bytes": 518755340,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00003-of-00012.jsonl",
+      "sha256": "459c59390fe42380ea17acaeb95dfe0b6f3f64aef5de61aa60bc3ee9e3bf236a"
+    },
+    {
+      "bytes": 505927655,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00004-of-00012.jsonl",
+      "sha256": "4f37e02c310002f7dbd051ed2cebe35e09647d5851d7dcbe8a8900713210b312"
+    },
+    {
+      "bytes": 534575665,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00005-of-00012.jsonl",
+      "sha256": "45febb85b6a5e475b1f8fc97b98c1c1349bd096eae4cd4a48d8f6bb33bb36cf0"
+    },
+    {
+      "bytes": 476654190,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00006-of-00012.jsonl",
+      "sha256": "5a3268aff6199774be03189e161238613a4318632ded1979565ca548a90de068"
+    },
+    {
+      "bytes": 509481748,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00007-of-00012.jsonl",
+      "sha256": "4e5bb3a3246dee27d781d34cbbeae2a1c178cced03661714165a8109c3f61e5d"
+    },
+    {
+      "bytes": 498866903,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00008-of-00012.jsonl",
+      "sha256": "9ac49655cca684ab6c7fe17c7d416f6c11bbdd4ece04964dd413be6a41e17e14"
+    },
+    {
+      "bytes": 507129734,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00009-of-00012.jsonl",
+      "sha256": "9596ba870971226af59488b5bdc4eaf0a6d63402483133bf79cdded0956e97be"
+    },
+    {
+      "bytes": 491515035,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00010-of-00012.jsonl",
+      "sha256": "eb1b4e8a09c0429239e8be8ba018dc702499953073fbecf250a9e950da51ee9b"
+    },
+    {
+      "bytes": 516847964,
+      "path": "SWE-agent-trajectories/data_jsonl/train-00011-of-00012.jsonl",
+      "sha256": "f7d1fb486ff2c82f4e6dea9970a87b0a2b8c2399bc3d55e209969e6939d646c8"
+    },
+    {
+      "bytes": 167442,
+      "path": "SWE-agent-trajectories/test_data/selected_500_json/manifest.csv",
+      "sha256": "1f076e15710fd6d00b354c4ae2985c4ba856e2c9741b07abdf5359d175e40dd9"
+    },
+    {
+      "bytes": 44844636,
+      "path": "SWE-agent-trajectories/test_data/selected_500_json/selected_500.jsonl",
+      "sha256": "3d1d8f26098773906f7359150a7f84becd651bb63731a9cfffd87009958af1d6"
+    },
+    {
+      "bytes": 1379,
+      "path": "SWE-agent-trajectories/test_data/selected_500_json/selection_summary.json",
+      "sha256": "9bbe85c36e41baaa82119c47957d782a4168e0f847278feab9f569861497cb41"
+    }
+  ],
+  "metadata": {
+    "model_counts": {
+      "swe-agent-llama-405b": 50,
+      "swe-agent-llama-70b": 350,
+      "swe-agent-llama-8b": 100
+    },
+    "raw_shards": [
+      {
+        "bytes": 480478296,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00000-of-00012.jsonl",
+        "sha256": "ced855e3ccc193fa005edcc33b0a312fbce9b6a75efb0b38ff3553eac1d2bf3b"
+      },
+      {
+        "bytes": 510511979,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00001-of-00012.jsonl",
+        "sha256": "b447675e6d94b97e2ee2897500160bfd640689e877b396ab4ddbc6439998bf09"
+      },
+      {
+        "bytes": 497821045,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00002-of-00012.jsonl",
+        "sha256": "4c754b1d0c8042bb8e1feb1d62513d2635ca0cdbd4168a8edee74003c466cd3e"
+      },
+      {
+        "bytes": 518755340,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00003-of-00012.jsonl",
+        "sha256": "459c59390fe42380ea17acaeb95dfe0b6f3f64aef5de61aa60bc3ee9e3bf236a"
+      },
+      {
+        "bytes": 505927655,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00004-of-00012.jsonl",
+        "sha256": "4f37e02c310002f7dbd051ed2cebe35e09647d5851d7dcbe8a8900713210b312"
+      },
+      {
+        "bytes": 534575665,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00005-of-00012.jsonl",
+        "sha256": "45febb85b6a5e475b1f8fc97b98c1c1349bd096eae4cd4a48d8f6bb33bb36cf0"
+      },
+      {
+        "bytes": 476654190,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00006-of-00012.jsonl",
+        "sha256": "5a3268aff6199774be03189e161238613a4318632ded1979565ca548a90de068"
+      },
+      {
+        "bytes": 509481748,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00007-of-00012.jsonl",
+        "sha256": "4e5bb3a3246dee27d781d34cbbeae2a1c178cced03661714165a8109c3f61e5d"
+      },
+      {
+        "bytes": 498866903,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00008-of-00012.jsonl",
+        "sha256": "9ac49655cca684ab6c7fe17c7d416f6c11bbdd4ece04964dd413be6a41e17e14"
+      },
+      {
+        "bytes": 507129734,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00009-of-00012.jsonl",
+        "sha256": "9596ba870971226af59488b5bdc4eaf0a6d63402483133bf79cdded0956e97be"
+      },
+      {
+        "bytes": 491515035,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00010-of-00012.jsonl",
+        "sha256": "eb1b4e8a09c0429239e8be8ba018dc702499953073fbecf250a9e950da51ee9b"
+      },
+      {
+        "bytes": 516847964,
+        "path": "SWE-agent-trajectories/data_jsonl/train-00011-of-00012.jsonl",
+        "sha256": "f7d1fb486ff2c82f4e6dea9970a87b0a2b8c2399bc3d55e209969e6939d646c8"
+      }
+    ],
+    "seed": 20260814,
+    "selected_count": 500,
+    "selection_group_counts": {
+      "diversity": 250,
+      "paired": 250
+    },
+    "source_relative": "SWE-agent-trajectories/test_data/selected_500_json",
+    "target_counts": {
+      "false": 250,
+      "true": 250
+    },
+    "tracked_artifacts": [
+      {
+        "bytes": 167442,
+        "path": "data/manifests/swe-selected-500/manifest.csv",
+        "sha256": "1f076e15710fd6d00b354c4ae2985c4ba856e2c9741b07abdf5359d175e40dd9"
+      },
+      {
+        "bytes": 1379,
+        "path": "data/manifests/swe-selected-500/selection_summary.json",
+        "sha256": "9bbe85c36e41baaa82119c47957d782a4168e0f847278feab9f569861497cb41"
+      },
+      {
+        "bytes": 104506,
+        "path": "data/samples/swe-selected-500/CASE-0001.json",
+        "sha256": "5d672dca81eda2579dd7dad62c1c9fe95acf069b4d844baeaba674989c46e6cf"
+      },
+      {
+        "bytes": 39189,
+        "path": "data/samples/swe-selected-500/CASE-0251.json",
+        "sha256": "e2dcacdcb4b9b2974e2f88488390f99151f247b2b165234a5ae4c07f0c6acb6e"
+      },
+      {
+        "bytes": 107382,
+        "path": "data/samples/swe-selected-500/CASE-0500.json",
+        "sha256": "db8aaabf31908172b6c948e63c4bae522fac01bd9b431a1d938168c1cfe9c5fe"
+      }
+    ],
+    "unique_instance_ids": 320,
+    "unique_repositories": 269
+  },
+  "name": "swe-selected-500",
+  "schema_version": "dataset_manifest_v1",
+  "total_bytes": 6093579011,
+  "version": "2026-09-16"
+}

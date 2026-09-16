@@ -1,0 +1,63 @@
+{
+  "seed": 20260814,
+  "eligible_candidate_count": 16800,
+  "selected_count": 500,
+  "hard_filters": {
+    "real_swe_agent_trajectory": true,
+    "bugfix_task_language": true,
+    "minimum_valid_thought_action_observation_cycles": 10,
+    "minimum_complete_cycle_ratio": 0.8,
+    "requires_inspection_and_edit_actions": true,
+    "requires_nonempty_patch_and_eval_evidence": true,
+    "preserves_complete_original_record": true
+  },
+  "target_counts": {
+    "true": 250,
+    "false": 250
+  },
+  "selection_group_counts": {
+    "paired": 250,
+    "diversity": 250
+  },
+  "model_counts": {
+    "swe-agent-llama-405b": 50,
+    "swe-agent-llama-70b": 350,
+    "swe-agent-llama-8b": 100
+  },
+  "model_counts_by_target": {
+    "true": {
+      "swe-agent-llama-405b": 25,
+      "swe-agent-llama-70b": 175,
+      "swe-agent-llama-8b": 50
+    },
+    "false": {
+      "swe-agent-llama-405b": 25,
+      "swe-agent-llama-70b": 175,
+      "swe-agent-llama-8b": 50
+    }
+  },
+  "length_band_counts": {
+    "40+": 128,
+    "20-39": 199,
+    "10-19": 173
+  },
+  "length_band_counts_by_target": {
+    "true": {
+      "40+": 54,
+      "20-39": 100,
+      "10-19": 96
+    },
+    "false": {
+      "40+": 74,
+      "20-39": 99,
+      "10-19": 77
+    }
+  },
+  "unique_instance_ids": 320,
+  "unique_repositories": 269,
+  "quality_score": {
+    "min": 72.684,
+    "max": 99.7,
+    "mean": 89.527
+  }
+}
