@@ -76,6 +76,34 @@ PYTHONPATH=src python scripts/extract_thought_intents.py \
   --swe-count 3 --kimi-count 0 --dry-run
 ```
 
+Build the Phase 1 SWE annotation queue from completed Thought-to-Intent files:
+
+```bash
+PYTHONPATH=src python scripts/build_intent_action_dataset.py build \
+  --input-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/thought_intent" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/intent_action_phase1_v1"
+```
+
+Review `annotation_template.csv`, save the labels as
+`reviewed_annotations.jsonl`, and then export gold relations and
+trajectory/template-isolated splits:
+
+```json
+{"candidate_id": "swe:CASE-0001:T1-I1", "label": "direct_match", "annotator": "reviewer-name", "notes": "Action directly fulfills the Intent."}
+```
+
+The JSONL file contains one JSON object per reviewed candidate. Allowed labels
+are `direct_match`, `partial_match`, `no_match`, `unfulfilled`, and
+`ambiguous`; `annotator` and `notes` may be empty strings.
+
+```bash
+PYTHONPATH=src python scripts/build_intent_action_dataset.py finalize \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/intent_action_phase1_v1"
+```
+
+Build mode never promotes automatic pairs to gold. Finalize mode exports only
+human-reviewed `direct_match` rows as training positives.
+
 ## Research Roadmap
 
 Phase 1 builds human-reviewed one-Intent–one-short-Action data, retrieval

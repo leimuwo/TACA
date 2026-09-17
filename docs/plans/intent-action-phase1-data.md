@@ -104,7 +104,7 @@
 - [ ] **Step 1: Write a failing CLI integration test** using temporary source/output directories and assert exact filenames plus JSONL/CSV row parity.
 - [ ] **Step 2: Implement `build` mode** with flags for input directory, output directory, token limits, and deterministic overwrite protection.
 - [ ] **Step 3: Implement `finalize` mode** requiring `reviewed_annotations.jsonl`; refuse to emit training splits if any included positive lacks `direct_match` review.
-- [ ] **Step 4: Run the full test suite** with `python -m unittest tests.test_intent_action_phase1 tests.test_generate_thought_intents -v`.
+- [ ] **Step 4: Run the full test suite** with `python -m unittest tests.test_intent_action_phase1 tests.test_intent_extraction -v`.
 - [ ] **Step 5: Run the real build** against `data/SWE-agent-trajectories/test_data/thought_intent` and write the Phase 0 audit, candidate JSONL, unfulfilled JSONL, annotation CSV, and build manifest.
 - [ ] **Step 6: Verify artifacts** by parsing every JSON/JSONL file, checking unique IDs, confirming zero eligible `edit` Actions, and reconciling counts with the audit summary.
 - [ ] **Step 7: Do not run finalize or model training** until human-reviewed annotations exist.

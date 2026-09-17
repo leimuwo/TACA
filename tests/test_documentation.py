@@ -16,6 +16,12 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("scripts/audit_repository.py", readme)
         self.assertIn("scripts/select_swe_trajectories.py", readme)
         self.assertIn("scripts/extract_thought_intents.py", readme)
+        self.assertIn("scripts/build_intent_action_dataset.py build", readme)
+        self.assertIn("scripts/build_intent_action_dataset.py finalize", readme)
+        self.assertIn('"candidate_id": "swe:CASE-0001:T1-I1"', readme)
+        self.assertIn('"label": "direct_match"', readme)
+        self.assertIn('"annotator": "reviewer-name"', readme)
+        self.assertIn('"notes": "Action directly fulfills the Intent."', readme)
         self.assertIn("TA_DATA_ROOT", readme)
         self.assertIn(
             "data/manifests/swe-selected-500/dataset_manifest.json",
