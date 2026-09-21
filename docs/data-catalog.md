@@ -1,5 +1,19 @@
 # Data Catalog
 
+## Full ModelScope Transfer
+
+The complete external `SWE-agent-trajectories` tree is prepared for a private
+ModelScope Dataset publication. It contains 2,016 non-cache files totaling
+7,529,577,161 bytes.
+
+- [inventory](../data/manifests/modelscope-full-v1/inventory.json)
+- [SHA-256 checksums](../data/manifests/modelscope-full-v1/SHA256SUMS)
+- [publishing procedure](modelscope-data-publishing.md)
+- [H100 reception guide](h100-project-receive.md)
+
+ModelScope authentication and the final private dataset ID are intentionally
+not stored in Git.
+
 ## SWE Selected 500
 
 The source corpus is stored externally relative to `TA_DATA_ROOT`:

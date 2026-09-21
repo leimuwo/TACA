@@ -1,0 +1,19 @@
+{
+  "schema_version": "taca_modelscope_inventory_v1",
+  "dataset_name": "TACA SWE agent trajectories",
+  "dataset_version": "modelscope-full-v1",
+  "source_root": "SWE-agent-trajectories",
+  "file_count": 2016,
+  "total_bytes": 7529577161,
+  "sha256sums_sha256": "5562c08a3a734801991017b356bf44640ef1dba88a1b692762d83f8b36fa82f0",
+  "excluded_paths": [
+    "SWE-agent-trajectories/.cache"
+  ],
+  "top_level_contents": {
+    "data": "Original Parquet shards, approximately 1.1 GiB on disk.",
+    "data_jsonl": "Original JSONL shards, approximately 5.7 GiB on disk.",
+    "test_data": "Selected trajectories and derived Intent-Action datasets, approximately 426 MiB on disk.",
+    "experiments": "Provisional sparse retrieval reports."
+  },
+  "provisional_warning": "Provisional Intent-Action supervision is feasibility-only and is not Gold evaluation data."
+}

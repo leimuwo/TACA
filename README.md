@@ -190,3 +190,10 @@ fulfillment without mixing those supervision types into the initial model.
 
 See the [Phase 1 data design](docs/designs/intent-action-phase1-data-design.md)
 and [implementation plan](docs/plans/intent-action-phase1-data.md).
+
+For machine-to-machine handoff, use the
+[ModelScope publishing procedure](docs/modelscope-data-publishing.md) and the
+[H100 reception guide](docs/h100-project-receive.md). The full external data
+tree is verified by the tracked
+[SHA-256 manifest](data/manifests/modelscope-full-v1/SHA256SUMS); credentials
+remain outside Git.
