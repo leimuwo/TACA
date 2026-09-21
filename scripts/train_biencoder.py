@@ -57,6 +57,10 @@ def run(args: argparse.Namespace) -> int:
         epochs=args.epochs,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        device=args.device,
+        precision=args.precision,
+        seed=args.seed,
     )
     split_examples = {
         split: prepare_training_examples(
@@ -101,6 +105,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument(
+        "--device",
+        choices=("auto", "cuda", "cpu"),
+        default="auto",
+        help="single-device runtime; auto selects CUDA when available",
+    )
+    parser.add_argument(
+        "--precision",
+        choices=("auto", "bf16", "fp32"),
+        default="auto",
+        help="auto selects BF16 on CUDA devices that support it",
+    )
+    parser.add_argument("--gradient-accumulation-steps", type=int, default=4)
+    parser.add_argument("--seed", type=int, default=20260921)
     parser.add_argument("--dry-run", action="store_true")
     return parser
 

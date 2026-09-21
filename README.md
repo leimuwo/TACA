@@ -155,6 +155,28 @@ env -u LD_LIBRARY_PATH PYTHONPATH=src .venv/bin/python scripts/train_biencoder.p
   --dry-run
 ```
 
+On a single H100, run the actual pilot with the CUDA-enabled PyTorch
+environment. `--device auto --precision auto` selects CUDA and BF16 when the
+GPU reports support; `--precision bf16` makes that requirement explicit.
+The trainer enables TF32, uses fused AdamW when available, accumulates four
+micro-batches by default, and writes `checkpoint-last` plus the validation-best
+`checkpoint-best`.
+
+```bash
+PYTHONPATH=src python scripts/train_biencoder.py \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/experiments/provisional_biencoder_h100_v1" \
+  --device cuda \
+  --precision bf16 \
+  --epochs 3 \
+  --batch-size 32 \
+  --gradient-accumulation-steps 4
+```
+
+The command fails early if CUDA or BF16 is unavailable. Use `--device cpu
+--precision fp32` only for a small smoke test; the current environment is not
+intended for full BGE training.
+
 All provisional outputs are permanently labeled
 `FEASIBILITY ONLY — NOT GOLD EVALUATION` and must not be reported as Gold
 evaluation results.
