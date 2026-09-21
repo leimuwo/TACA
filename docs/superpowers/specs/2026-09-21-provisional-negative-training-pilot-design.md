@@ -3,8 +3,9 @@
 ## Decision
 
 Run a clearly isolated feasibility experiment using the 609 automatically paired
-SWE Intent--Action candidates as provisional positives. Generate deterministic
-hard negatives without an LLM judge, establish lexical and frozen-embedding
+SWE Intent--Action candidates as provisional positives. Use the configured
+Inspire inference endpoint to propose hard-negative cases, apply strict local
+structural and provenance validation, establish lexical and frozen-embedding
 baselines, and fine-tune a small shared bi-encoder. No output from this pilot is
 Gold data or a publishable final result; the full experiment must later be
 repeated from human-reviewed `direct_match` positives.
@@ -91,10 +92,11 @@ provisional training records + audit manifest
 The implementation is divided into four responsibilities:
 
 1. `provisional_negatives.py`: Action field parsing, per-split indexing,
-   candidate generation, risk filtering, deterministic selection, and dataset
+   candidate parsing, risk filtering, deterministic selection, and dataset
    serialization.
-2. `build_provisional_pilot.py`: external-artifact CLI, manifest reconciliation,
-   atomic publication, and dry-run reporting.
+2. `generate_provisional_negatives.py`: inference requests, strict response
+   validation, resume state, manifest reconciliation, atomic publication, and
+   dry-run reporting.
 3. `retrieval_baselines.py`: TF-IDF, BM25, frozen-encoder scoring, and shared
    retrieval metrics.
 4. `train_biencoder.py`: dependency checks, shared-encoder training,
@@ -111,13 +113,43 @@ No candidate Action, parameter value, trajectory context, or hard-negative
 record may cross split boundaries. Validation and test assignments are frozen
 inside the pilot manifest after the first successful build.
 
+## Inference Contract
+
+The configured endpoint defaults to:
+
+```text
+https://qjkpcombh9jkcecah8jdkgd5d5beqege.openapi-qb-ai.sii.edu.cn
+```
+
+It is treated as a model-specific endpoint, so the request path and optional
+model name remain configurable. The API key is read only from `INF_API_KEY`.
+The client bypasses inherited HTTP proxies for this host because the current
+proxy path cannot complete TLS negotiation while direct access reaches the
+Inspire authentication gateway.
+
+For each provisional positive, the model receives the Intent, positive Action,
+allowed negative categories, and a bounded list of eligible same-split and
+same-trajectory observed Actions. It returns strict JSON containing three to
+five proposed cases. Each proposal includes `negative_type`, `serialized_action`, a
+short semantic reason, and an optional observed source candidate ID.
+
+The model proposal is never trusted as a label. Local validation must confirm
+the claimed category, parse and normalize the Action, enforce split provenance,
+reject duplicates and matching Actions, and attach the permanent provenance
+value `provisional_llm_generated`. Invalid proposals remain in an audit file
+and never enter training.
+
+The endpoint protocol is detected with one preflight request before batch
+generation. Authentication, unsupported request schema, or repeated transport
+failures stop the run instead of being retried for every record.
+
 ## Negative Types
 
 ### Same Tool, Wrong Parameter
 
-This is the highest-priority and lowest-risk category. The generator parses
-known normalized Action fields and substitutes exactly one important value with
-an observed value from another same-tool Action in the same split.
+This is the highest-priority and lowest-risk category. The model proposes an
+Action, and the validator parses known normalized fields and verifies that
+exactly one important value differs from the positive.
 
 Examples:
 
@@ -140,14 +172,17 @@ Supported v1 fields are:
 - generic `args` only when both source and replacement contain one scalar
   argument.
 
-The replacement must preserve field type, must have appeared in the same split,
-and must produce a normalized Action different from the positive. Multi-field
+The replacement must preserve field type and must produce a normalized Action
+different from the positive. Observed same-split values are preferred and are
+marked `observed_value`; model-created scalar values are marked
+`synthetic_value`. Multi-field
 mutations, invented strings, code payloads, and invalid round trips are rejected.
 
 ### Wrong Tool, Same Object
 
-This category selects an observed Action from the same split that has a
-different tool but the same exact normalized target.
+This category accepts a proposed Action with a different tool but the same exact
+normalized target. The Action may be selected from the supplied same-split pool
+or proposed by the model, but the target must be preserved exactly.
 
 Example:
 
@@ -163,7 +198,9 @@ used. Tool pairs with ambiguous equivalence are excluded.
 
 ### Strict Same-Trajectory Unrelated
 
-This category has the greatest false-negative risk and is used only when all of
+This category has the greatest false-negative risk. The model must select an
+observed Action by candidate ID from the supplied same-trajectory pool; free-form
+generation is not allowed for this category. It is used only when all of
 the following hold:
 
 - the Action is an observed eligible short Action in the same trajectory and
@@ -329,6 +366,8 @@ $TA_DATA_ROOT/SWE-agent-trajectories/test_data/
 It contains:
 
 - `negative_candidates.jsonl`;
+- `negative_responses.jsonl`;
+- `negative_failures.jsonl`;
 - `provisional_training_records.jsonl`;
 - `splits/train.jsonl`;
 - `splits/validation.jsonl`;
@@ -357,6 +396,10 @@ It contains:
 Dataset building fails closed on duplicate IDs, malformed Actions, cross-split
 provenance, input hash mismatches, or missing provisional watermarks. Artifacts
 are written to a temporary directory and atomically published.
+
+Generation supports interruption and resume. Cache reuse requires the same
+candidate ID, prompt hash, endpoint, request schema, model setting, and source
+manifest hash. The API key and authorization headers are never persisted.
 
 Training stops with an actionable error when dependencies, input manifests, or
 model files are unavailable. Checkpoints are written after each epoch, so an

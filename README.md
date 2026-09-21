@@ -29,8 +29,20 @@ cp .env.example .env
 ```
 
 Set `TA_DATA_ROOT` in the untracked `.env` or shell environment to the shared
-data directory. API credentials belong only in the environment variable
-`INTENT_API_KEY`; never add them to tracked files.
+data directory. Intent extraction credentials belong in `INTENT_API_KEY`, and
+provisional-negative generation credentials belong in `INF_API_KEY`; never add
+either value to tracked files.
+
+The optional training stack is installed into a repository-local venv:
+
+```bash
+python -m venv .venv
+python -m pip install -e '.[training]'
+```
+
+On the current Inspire image, clear the inherited `LD_LIBRARY_PATH` when using
+the venv so its CPU PyTorch libraries are not shadowed by system Python 3.12
+CUDA libraries.
 
 ## Data
 
@@ -103,6 +115,44 @@ PYTHONPATH=src python scripts/build_intent_action_dataset.py finalize \
 
 Build mode never promotes automatic pairs to gold. Finalize mode exports only
 human-reviewed `direct_match` rows as training positives.
+
+Prepare the separate feasibility-only provisional pilot from the current SWE
+annotation candidates:
+
+```bash
+PYTHONPATH=src python scripts/generate_provisional_negatives.py prepare \
+  --input-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/intent_action_phase1_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
+```
+
+After exporting `INF_API_KEY` securely, generate and locally validate LLM
+proposals. The command supports hash-qualified resume and bypasses the inherited
+proxy for the configured endpoint:
+
+```bash
+PYTHONPATH=src python scripts/generate_provisional_negatives.py generate \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
+
+PYTHONPATH=src python scripts/generate_provisional_negatives.py finalize \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
+```
+
+Run dependency-free sparse baselines and validate the bi-encoder training plan:
+
+```bash
+PYTHONPATH=src python scripts/run_retrieval_baselines.py \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/experiments/provisional_sparse_pilot_v1"
+
+env -u LD_LIBRARY_PATH PYTHONPATH=src .venv/bin/python scripts/train_biencoder.py \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/experiments/provisional_biencoder_pilot_v1" \
+  --dry-run
+```
+
+All provisional outputs are permanently labeled
+`FEASIBILITY ONLY — NOT GOLD EVALUATION` and must not be reported as Gold
+evaluation results.
 
 ## Research Roadmap
 

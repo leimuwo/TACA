@@ -1,9 +1,9 @@
 # Thought–Intent–Action Retrieval 项目进展汇报
 
 **汇报日期：** 2026-09-21  
-**当前阶段：** Phase 1 数据集构建与 Thought → Intent 方案验证  
+**当前阶段：** Phase 1 provisional negative 与训练可行性实现
 **当前分支：** `feature/phase1-dataset`  
-**最新提交：** `046ea53 feat: build phase 1 intent action dataset`
+**最新已提交基线：** `04a89f4 docs: design provisional retrieval pilot`
 
 ## 一、项目目标
 
@@ -33,7 +33,8 @@
   → 训练和评测 bi-encoder
 ```
 
-当前已完成到“生成可审计候选数据集”，人工确认、负样本生成和模型训练尚未开始。
+当前已经完成 provisional pilot 的离线工程实现；在线负样本批量生成等待
+`INF_API_KEY` 安全注入。所有结果均为 feasibility-only，不替代人工 Gold 数据。
 
 ## 三、已完成工作
 
@@ -147,11 +148,54 @@ git@github.com:leimuwo/TACA.git
 
 Action 过滤命中包括 256 个 `edit`、256 个多行 Action、100 个长 payload、20 个整体过长 Action，以及少量赋值碎片和复合 shell。
 
-### 3.5 工程验证
+### 3.5 Provisional negative pilot
+
+已基于 609 条 SWE 自动候选固化独立 pilot：
+
+| 指标 | 数量 |
+|---|---:|
+| provisional pairs | 609 |
+| generation requests | 609 |
+| train | 425 |
+| validation | 92 |
+| test | 92 |
+| Kimi | 0 |
+
+已实现：
+
+- Inspire OpenAI-style endpoint 客户端、代理绕过、重试和 preflight；
+- API key 只从 `INF_API_KEY` 读取，不写入状态、日志或仓库；
+- 同工具错误参数、错误工具同对象、严格同轨迹无关 Action 三类校验；
+- 每个正样本最多 5 个 negatives，按 3+1+1 稳定选择；
+- request/prompt/endpoint/model/source manifest 共同决定 resume cache key；
+- 原子状态文件、连续失败熔断、拒绝项审计；
+- 只有全部 609 请求成功且一致时才允许 finalize；
+- 每条 relation 永久标记 `provisional_auto_pair`、`feasibility_only`、
+  `human_reviewed: false`。
+
+### 3.6 基线与训练代码
+
+已实现：
+
+- dependency-free TF-IDF 和 BM25；
+- Recall@1/3、MRR、Mean Rank；
+- hard-negative pairwise accuracy 与 mean similarity margin；
+- shared bi-encoder 的 InfoNCE + margin loss；
+- frozen/fine-tuned encoder 统一评测接口；
+- 训练配置、水印校验、checkpoint metadata 和 dry-run；
+- 本地微型共享 encoder 单 batch 训练烟雾测试，不依赖模型下载。
+
+训练入口已通过 CPU 单 batch smoke test。当前机器无可用 GPU，因此不在本环境
+运行完整 frozen BGE 下载、评测或多 epoch 训练；这些步骤移交到 GPU 环境执行。
+如需在当前 Inspire 镜像运行 venv，必须使用 `env -u LD_LIBRARY_PATH`，避免系统
+Python 3.12 CUDA torch 覆盖 venv 中的 Python 3.13 CPU torch。
+
+### 3.7 工程验证
 
 当前 Phase 1 提交已通过：
 
-- 84 项自动化测试；
+- 116 项基础环境自动化测试通过，3 项按环境条件跳过；
+- `.venv` 中额外 8 项 bi-encoder 测试通过，包括两个真实 PyTorch smoke tests；
 - Python `compileall`；
 - 仓库秘密、绝对路径、大文件和生成目录审计；
 - Git diff 格式检查；
@@ -239,7 +283,9 @@ Action 过滤命中包括 256 个 `edit`、256 个多行 Action、100 个长 pay
 
 ### P2：Negative 样本
 
-每个正样本构造 3～5 个 hard negatives，优先级为：
+离线生成、验证和 finalize 代码已经完成。当前剩余工作是安全设置
+`INF_API_KEY` 后运行全部 609 个 request，并审查覆盖率。每个正样本构造
+3～5 个 hard negatives，优先级为：
 
 1. 同工具、错误参数；
 2. 相似操作、错误工具；
@@ -250,31 +296,38 @@ Action 过滤命中包括 256 个 `edit`、256 个多行 Action、100 个长 pay
 
 ### P3：基线与模型训练
 
-- TF-IDF；
-- BM25；
+- TF-IDF 与 BM25 已实现，等待 finalized negatives 后运行；
+- frozen BGE 与 fine-tuned shared bi-encoder 代码已实现；
 - 未微调通用 embedding；
 - LLM pairwise judge；
 - 共享参数 bi-encoder；
 - bi-encoder + 参数级 hard negatives。
 
-第一版建议使用 `BAAI/bge-base-en-v1.5` 或 `intfloat/e5-base-v2`，并报告 Recall@1、Recall@3、MRR、Mean Rank、hard-negative pairwise accuracy 和 fulfillment detection 指标。
+pilot 默认使用 `BAAI/bge-small-en-v1.5` 以控制 CPU 成本，并报告 Recall@1、
+Recall@3、MRR、Mean Rank、hard-negative pairwise accuracy 和 similarity
+margin。fulfillment detection 仍需未履行样本后再加入。
 
 ## 七、下一阶段建议
 
 建议按以下顺序继续：
 
-1. 完成 Thought → Intent v1.1 Prompt 和批量运行保护；
-2. 选择约 10 条轨迹、300 个步骤进行 DeepSeek pilot；
-3. 人工检查至少 100 个 Intent，重点评估漏抽、错抽、原子性和上下文幻觉；
-4. 若准确率达到要求，执行完整 500 条轨迹抽取；
-5. 用完整结果重新构建 Phase 1 annotation queue；
-6. 先人工确认一批 300～500 对，完成检索可行性实验；
-7. 再扩展到 hard negatives、基线和 bi-encoder 训练。
+1. 在 shell 中安全导出 `INF_API_KEY`，先执行 1 条真实 preflight/generation；
+2. 协议确认后断点生成全部 609 条 negative proposals；
+3. finalize provisional records，并统计每类 negative 覆盖率和拒绝原因；
+4. 当前环境运行 TF-IDF、BM25；
+5. 在 GPU 环境运行 frozen BGE 和最多 3 epoch 的 shared bi-encoder feasibility training；
+6. 同时继续人工 Gold 标注，后续从基础 checkpoint 重新正式训练；
+7. 完整 500 条 Thought → Intent 抽取仍作为扩大数据规模的独立工作流。
 
 ## 八、当前阶段结论
 
-项目已经完成从原始轨迹筛选、Thought → Intent 抽取到 Phase 1 Intent–Action 候选生成的端到端工程闭环，并通过真实语料验证。当前最大问题不再是数据管线缺失，而是需要在大规模付费抽取前进一步稳定 Intent 原子性、降低上下文成本并加强失败保护。
+项目已经完成从原始轨迹筛选、Thought → Intent、Phase 1 候选、provisional
+negative 生成入口、稀疏基线到 shared bi-encoder 训练入口的工程闭环。当前直接
+阻塞不是代码，而是在线生成进程没有可用的 `INF_API_KEY` 环境变量，因此尚未
+产生可训练的完整 609 条 negative records。
 
 现阶段可概括为：
 
-> 代码和小规模数据管线已经可用；500 条 SWE 已完成筛选和 dry-run；下一关键里程碑是完成 Intent v1.1 pilot，随后生成完整 500 条 Intent，并进入人工 Gold 标注和 hard-negative 数据构建。
+> 609 条 SWE provisional positives 已准备完成，negative 校验、基线和训练代码
+> 已就绪；安全注入推理密钥后即可运行生成→finalize→baseline→bi-encoder，所有
+> 结果只作为 feasibility pilot，后续仍须以人工 Gold 数据重训。
