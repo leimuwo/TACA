@@ -1,6 +1,8 @@
 {
   "schema_version": "taca_modelscope_inventory_v1",
   "dataset_name": "TACA SWE agent trajectories",
+  "modelscope_dataset_id": "MongTsai/TACA-data",
+  "modelscope_revision": "master",
   "dataset_version": "modelscope-full-v1",
   "source_root": "SWE-agent-trajectories",
   "file_count": 2016,

@@ -11,12 +11,20 @@ The sender must provide these non-secret values separately after publication:
 ```bash
 export TACA_GITHUB_REPO='git@github.com:leimuwo/TACA.git'
 export TACA_GITHUB_REF='feature/phase1-dataset'
-export TACA_MODELSCOPE_DATASET='<owner>/TACA-data'
-export TACA_MODELSCOPE_REVISION='<immutable-revision>'
+export TACA_MODELSCOPE_DATASET='MongTsai/TACA-data'
+export TACA_MODELSCOPE_REVISION='master'
 ```
+
+Dataset page: <https://modelscope.cn/datasets/MongTsai/TACA-data>
 
 The receiver must configure its own GitHub SSH access and ModelScope token.
 Tokens and private keys must never be copied from the source machine.
+
+The ModelScope dataset is private. The receiving account must be granted
+access by `MongTsai`. ModelScope's dataset tag endpoint returned 404 during
+publication, so this handoff uses `master` plus the tracked full-file SHA-256
+manifest as the immutable content contract. If `master` changes, verification
+will fail before training.
 
 ## Capacity preflight
 
@@ -120,6 +128,10 @@ printf '%s  %s\n' \
 
 Do not start training when any checksum fails. Re-download the failed file or
 the pinned snapshot first.
+
+Publication verification on 2026-09-21 compared every local source file with
+the ModelScope file tree: 2,016 matched paths, 7,529,577,161 matched bytes,
+zero missing files, zero size mismatches, and zero SHA-256/LFS blob mismatches.
 
 ## Validate the project
 

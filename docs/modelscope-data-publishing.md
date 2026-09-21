@@ -44,11 +44,13 @@ export MODELSCOPE_API_TOKEN='<set-in-shell>'
 
 ## Create and upload
 
-Choose the authenticated ModelScope namespace and export the canonical ID:
+The published private dataset uses this canonical ID:
 
 ```bash
-export TACA_MODELSCOPE_DATASET='<owner>/TACA-data'
+export TACA_MODELSCOPE_DATASET='MongTsai/TACA-data'
 ```
+
+Dataset page: <https://modelscope.cn/datasets/MongTsai/TACA-data>
 
 Create a private dataset repository:
 
@@ -92,9 +94,14 @@ Upload the tracked manifests to the repository root:
   --repo-type dataset
 ```
 
-After upload, record the final dataset ID and immutable revision in the handoff
-message. The receiving agent should pin that revision instead of relying on a
-moving `master` branch.
+ModelScope's dataset tag/revision endpoint returned 404 during this publication.
+The receiver therefore downloads `master` and enforces immutability with the
+tracked 2,016-file SHA-256 manifest. Do not alter the published data in place;
+publish changed data under a new dataset version and checksum directory.
+
+The completed upload was verified on 2026-09-21 by comparing the ModelScope
+file tree against the source: 2,016 matched paths, 7,529,577,161 matched bytes,
+zero missing files, zero size mismatches, and zero SHA-256/LFS blob mismatches.
 
 ## Local pre-upload verification
 
