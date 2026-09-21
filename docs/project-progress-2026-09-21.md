@@ -173,6 +173,25 @@ Action 过滤命中包括 256 个 `edit`、256 个多行 Action、100 个长 pay
 - 每条 relation 永久标记 `provisional_auto_pair`、`feasibility_only`、
   `human_reviewed: false`。
 
+真实在线生成已完成并 finalize：
+
+| 指标 | 数量 |
+|---|---:|
+| 模型响应 | 609 |
+| 请求失败 | 0 |
+| 通过 validator 并最终选中 negatives | 1,599 |
+| `same_tool_wrong_parameter` | 982 |
+| `wrong_tool_same_object` | 307 |
+| `same_trajectory_unrelated` | 310 |
+| 至少 3 个显式 negatives 的 positives | 380 |
+| 0 个显式 negatives 的 positives | 30 |
+| 被 validator 拒绝的模型 proposals | 1,137 |
+
+30 条零显式 negative 记录仍可使用 in-batch negatives，不为追求数量放宽安全
+校验。在线服务实际使用 `/v1/chat/completions`；DFLASH speculative decoding
+不支持 `response_format=json_object`，因此采用严格 JSON Prompt 加本地 JSON/
+schema 验证。
+
 ### 3.6 基线与训练代码
 
 已实现：
@@ -185,6 +204,17 @@ Action 过滤命中包括 256 个 `edit`、256 个多行 Action、100 个长 pay
 - 训练配置、水印校验、checkpoint metadata 和 dry-run；
 - 本地微型共享 encoder 单 batch 训练烟雾测试，不依赖模型下载。
 
+已在 finalized validation/test splits 上运行稀疏基线：
+
+| 方法/切分 | Recall@1 | MRR | Hard-negative pairwise accuracy |
+|---|---:|---:|---:|
+| BM25 validation | 0.250 | 0.499 | 0.707 |
+| BM25 test | 0.391 | 0.558 | 0.793 |
+| TF-IDF validation | 0.283 | 0.544 | 0.772 |
+| TF-IDF test | 0.359 | 0.517 | 0.797 |
+
+以上全部为 `FEASIBILITY ONLY — NOT GOLD EVALUATION`，不能解释为正式模型效果。
+
 训练入口已通过 CPU 单 batch smoke test。当前机器无可用 GPU，因此不在本环境
 运行完整 frozen BGE 下载、评测或多 epoch 训练；这些步骤移交到 GPU 环境执行。
 如需在当前 Inspire 镜像运行 venv，必须使用 `env -u LD_LIBRARY_PATH`，避免系统
@@ -194,7 +224,7 @@ Python 3.12 CUDA torch 覆盖 venv 中的 Python 3.13 CPU torch。
 
 当前 Phase 1 提交已通过：
 
-- 116 项基础环境自动化测试通过，3 项按环境条件跳过；
+- 117 项基础环境自动化测试通过，3 项按环境条件跳过；
 - `.venv` 中额外 8 项 bi-encoder 测试通过，包括两个真实 PyTorch smoke tests；
 - Python `compileall`；
 - 仓库秘密、绝对路径、大文件和生成目录审计；
@@ -283,8 +313,7 @@ Python 3.12 CUDA torch 覆盖 venv 中的 Python 3.13 CPU torch。
 
 ### P2：Negative 样本
 
-离线生成、验证和 finalize 代码已经完成。当前剩余工作是安全设置
-`INF_API_KEY` 后运行全部 609 个 request，并审查覆盖率。每个正样本构造
+离线生成、验证、609 条在线调用与 finalize 已完成。每个正样本目标构造
 3～5 个 hard negatives，优先级为：
 
 1. 同工具、错误参数；
@@ -296,7 +325,7 @@ Python 3.12 CUDA torch 覆盖 venv 中的 Python 3.13 CPU torch。
 
 ### P3：基线与模型训练
 
-- TF-IDF 与 BM25 已实现，等待 finalized negatives 后运行；
+- TF-IDF 与 BM25 已实现并完成 provisional validation/test 运行；
 - frozen BGE 与 fine-tuned shared bi-encoder 代码已实现；
 - 未微调通用 embedding；
 - LLM pairwise judge；
@@ -311,23 +340,21 @@ margin。fulfillment detection 仍需未履行样本后再加入。
 
 建议按以下顺序继续：
 
-1. 在 shell 中安全导出 `INF_API_KEY`，先执行 1 条真实 preflight/generation；
-2. 协议确认后断点生成全部 609 条 negative proposals；
-3. finalize provisional records，并统计每类 negative 覆盖率和拒绝原因；
-4. 当前环境运行 TF-IDF、BM25；
-5. 在 GPU 环境运行 frozen BGE 和最多 3 epoch 的 shared bi-encoder feasibility training；
-6. 同时继续人工 Gold 标注，后续从基础 checkpoint 重新正式训练；
-7. 完整 500 条 Thought → Intent 抽取仍作为扩大数据规模的独立工作流。
+1. 对 30 条零显式 negative 和 89 条少于 2 个 negative 的记录做重点审计；
+2. 抽样人工检查 `same_trajectory_unrelated`，评估潜在 false negatives；
+3. 在 GPU 环境运行 frozen BGE 和最多 3 epoch 的 shared bi-encoder feasibility training；
+4. 同时继续人工 Gold 标注，后续从基础 checkpoint 重新正式训练；
+5. 完整 500 条 Thought → Intent 抽取仍作为扩大数据规模的独立工作流。
 
 ## 八、当前阶段结论
 
-项目已经完成从原始轨迹筛选、Thought → Intent、Phase 1 候选、provisional
-negative 生成入口、稀疏基线到 shared bi-encoder 训练入口的工程闭环。当前直接
-阻塞不是代码，而是在线生成进程没有可用的 `INF_API_KEY` 环境变量，因此尚未
-产生可训练的完整 609 条 negative records。
+项目已经完成从原始轨迹筛选、Thought → Intent、Phase 1 候选、609 条
+provisional negative 在线生成、finalize、稀疏基线到 shared bi-encoder 训练
+入口的工程闭环。当前剩余的主要运行工作是在 GPU 环境执行 frozen BGE 与
+fine-tuned bi-encoder，并对 provisional negatives 进行人工风险抽查。
 
 现阶段可概括为：
 
-> 609 条 SWE provisional positives 已准备完成，negative 校验、基线和训练代码
-> 已就绪；安全注入推理密钥后即可运行生成→finalize→baseline→bi-encoder，所有
-> 结果只作为 feasibility pilot，后续仍须以人工 Gold 数据重训。
+> 609 条 SWE provisional positives 已生成 1,599 个经过本地严格校验的显式
+> negatives，TF-IDF/BM25 feasibility baselines 已完成；下一步在 GPU 环境运行
+> frozen/fine-tuned bi-encoder，并继续用人工 Gold 数据替换 provisional supervision。

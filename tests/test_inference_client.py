@@ -93,6 +93,22 @@ class InferenceClientTests(unittest.TestCase):
                 {"role": "user", "content": "user"},
             ],
         )
+        self.assertNotIn("response_format", request["body"])
+
+    def test_can_enable_json_response_format_for_compatible_endpoints(self):
+        client = InferenceClient(
+            endpoint=self.endpoint,
+            api_key=_test_credential(),
+            json_response_format=True,
+            timeout=5,
+        )
+
+        client.generate_json(system_prompt="s", user_prompt="u")
+
+        self.assertEqual(
+            _Handler.requests[0]["body"]["response_format"],
+            {"type": "json_object"},
+        )
 
     def test_bypasses_inherited_proxy_configuration(self):
         client = InferenceClient(

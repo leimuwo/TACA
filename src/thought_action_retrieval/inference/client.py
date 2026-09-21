@@ -27,6 +27,7 @@ class InferenceClient:
     model: str | None = None
     timeout: int = 120
     retries: int = 2
+    json_response_format: bool = False
 
     def _url(self) -> str:
         endpoint = self.endpoint.rstrip("/")
@@ -40,9 +41,10 @@ class InferenceClient:
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0,
-            "response_format": {"type": "json_object"},
             "stream": False,
         }
+        if self.json_response_format:
+            payload["response_format"] = {"type": "json_object"}
         if self.model:
             payload["model"] = self.model
         return payload

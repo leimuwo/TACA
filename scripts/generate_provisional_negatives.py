@@ -172,6 +172,7 @@ def _cache_key(
     endpoint: str,
     request_path: str,
     model: str | None,
+    json_response_format: bool,
 ) -> str:
     material = {
         "request_id": request["request_id"],
@@ -181,6 +182,7 @@ def _cache_key(
         "endpoint": endpoint.rstrip("/"),
         "request_path": request_path,
         "model": model,
+        "json_response_format": json_response_format,
     }
     return hashlib.sha256(_json_bytes(material)).hexdigest()
 
@@ -213,6 +215,7 @@ def _rebuild_generation_aggregates(
     endpoint: str,
     request_path: str,
     model: str | None,
+    json_response_format: bool,
 ) -> tuple[int, int]:
     state_dir = dataset_dir / ".generation_state"
     pair_by_id = {row["candidate_id"]: row for row in pairs}
@@ -227,6 +230,7 @@ def _rebuild_generation_aggregates(
             endpoint=endpoint,
             request_path=request_path,
             model=model,
+            json_response_format=json_response_format,
         )
         state = _read_matching_state(state_dir, request, key)
         if state is None:
@@ -346,6 +350,7 @@ def generate(args: argparse.Namespace) -> int:
             endpoint=endpoint,
             request_path=request_path,
             model=model,
+            json_response_format=args.json_response_format,
         )
         state = _read_matching_state(state_dir, request, key)
         if state is None or state.get("status") != "success":
@@ -363,6 +368,7 @@ def generate(args: argparse.Namespace) -> int:
             model=model,
             timeout=args.timeout,
             retries=args.retries,
+            json_response_format=args.json_response_format,
         )
         client.preflight()
         system_prompt, user_template = _prompt_sections()
@@ -416,6 +422,7 @@ def generate(args: argparse.Namespace) -> int:
         endpoint=endpoint,
         request_path=request_path,
         model=model,
+        json_response_format=args.json_response_format,
     )
     print(
         f"generation state: {response_count}/{len(requests)} responses, "
@@ -538,9 +545,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     generate_parser.add_argument(
-        "--request-path", default=os.environ.get("INF_API_REQUEST_PATH", "/")
+        "--request-path",
+        default=os.environ.get("INF_API_REQUEST_PATH", "/v1/chat/completions"),
     )
     generate_parser.add_argument("--model", default=None)
+    generate_parser.add_argument("--json-response-format", action="store_true")
     generate_parser.add_argument("--timeout", type=int, default=120)
     generate_parser.add_argument("--retries", type=int, default=2)
     generate_parser.add_argument("--limit", type=int)

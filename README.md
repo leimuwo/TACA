@@ -137,6 +137,11 @@ PYTHONPATH=src python scripts/generate_provisional_negatives.py finalize \
   --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
 ```
 
+The configured DFLASH endpoint uses `/v1/chat/completions` and does not support
+grammar-constrained `response_format=json_object`. The client therefore relies
+on the strict-JSON prompt plus local parsing and validation by default; use
+`--json-response-format` only with a compatible endpoint.
+
 Run dependency-free sparse baselines and validate the bi-encoder training plan:
 
 ```bash
