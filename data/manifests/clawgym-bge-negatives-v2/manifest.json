@@ -1,0 +1,76 @@
+{
+  "schema_version": "bge_negatives_v2",
+  "model": "deepseek-v4-flash-gqq",
+  "positive_edges": 5465,
+  "eligible_edges": 4070,
+  "accepted_candidates": 6900,
+  "accepted_by_category": {
+    "P1": 4214,
+    "P2": 2686
+  },
+  "accepted_by_origin": {
+    "previous_gqq_validated": 4061,
+    "rule_donor": 1752,
+    "rule_operation": 713,
+    "rule_exec_operation": 180,
+    "rule_exec_donor": 194
+  },
+  "eligible_by_tool": {
+    "web_fetch": 282,
+    "read": 1650,
+    "write": 743,
+    "exec": 1220,
+    "edit": 114,
+    "process": 25,
+    "browser": 30,
+    "gateway": 2,
+    "session_status": 4
+  },
+  "train_by_tool": {
+    "write": 640,
+    "read": 1143,
+    "edit": 61,
+    "exec": 96
+  },
+  "train_grouped_rows": 1940,
+  "collapsed_duplicate_training_rows": 32,
+  "train_triplets": 5820,
+  "positive_only_rows": 2098,
+  "last_run_exclusions": {
+    "p1_target_not_explicit": 4096,
+    "training_text_too_long": 4,
+    "model_reject_P1": 7,
+    "model_reject_P2": 2
+  },
+  "supervision_tier": "silver_model_validated",
+  "input_sha256": {
+    "matches": "bdd8697c07aea32379edd1291140e52d58a1f6149544bb1f5e8d17884ef7c0e0",
+    "actions": "68116f05548adb03ae8f00cd49bc3ec163609613ed75c5ccd0bfa4cfd2054ad8",
+    "intents": "ad7091636e3e64e318e4efe5c266dd09d0059d38d4b6099dfc2a7542e2074aa5",
+    "old_negatives": "92df2f56de4be22b79bb66de27f0b7018821a0ffac12d8e586803ec268332a07"
+  },
+  "note": "P4 is sampled dynamically during training; no human Gold review has been claimed.",
+  "dataset_location": "External local data: Project/data/clawgym/bge_negatives_v2_20260929; not committed to Git",
+  "artifact_integrity": {
+    "positive_pool.jsonl": {
+      "bytes": 8896034,
+      "sha256": "3e9d73258879869bee9524242c00a50cda474cff22b4313c65025f76c5fd4ad7"
+    },
+    "validated_candidates.jsonl": {
+      "bytes": 8681858,
+      "sha256": "9fdc80c944bec293c2cc47e296586f1afdd05c49457d594998b66e621cefb3d6"
+    },
+    "train_grouped.jsonl": {
+      "bytes": 3203381,
+      "sha256": "8a6f2b01625a6f182809d68750d5f15b393d741c2a4c59b2b1257de22c7c9e4d"
+    },
+    "train.jsonl": {
+      "bytes": 2444724,
+      "sha256": "0af683c962091de1d33963393e9be1132eae4dc75d722f8739f758fcd66d7331"
+    },
+    "positive_only.jsonl": {
+      "bytes": 328039,
+      "sha256": "9f73cc50c854fd41c1129a8225cdf6658db464ab6601d40550c085cea7396e7e"
+    }
+  }
+}
