@@ -46,6 +46,12 @@ class NegativeGuardTests(unittest.TestCase):
         self.assertEqual(validate(source, {"function": "append", "args": {"path": "report.md"}}, "P2"), "p2_unsupported_operation")
         self.assertEqual(validate(source, {"function": "read", "args": {"path": "other.md"}}, "P2"), "p2_changed_target")
 
+    def test_content_change_requires_explicit_intent_constraint(self):
+        positive = {"function": "write", "args": {"path": "notes.md", "content": "Meeting notes: status PASS and next steps."}}
+        proposed = {"function": "write", "args": {"path": "notes.md", "content": "Meeting notes: status FAIL and next steps."}}
+        self.assertEqual(validate(edge("Create the meeting notes file", positive), proposed, "P1"), "p1_content_not_constrained")
+        self.assertIsNone(validate(edge("Write notes.md with status PASS", positive), proposed, "P1"))
+
 
 if __name__ == "__main__":
     unittest.main()

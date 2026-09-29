@@ -62,8 +62,10 @@ GQQ 的提议先过程序校验：工具必须真实存在；P1 只能改变指�
 
 ## 2026-09-29 首批执行结果
 
-数据位于 `data/clawgym/bge_negatives_v2_20260929/`。共建立 5,465 条 train 正例边；其中 4,070 条通过原子性、复核标记和训练文本长度筛选。得到 6,900 条通过规则和 GQQ 复判的 P1/P2 候选；1,940 条去重后的正例拥有完整的 `2×P1+1×P2`，对应 `train.jsonl` 中 5,820 个互不重复的训练三元组。另有 2,098 条合格正例边未配齐三负例，保存在 `positive_only.jsonl`；未通过正例筛选的边仍保存在 `positive_pool.jsonl`。
+数据位于 `data/clawgym/bge_negatives_v2_20260929/`。共建立 5,465 条 train 正例边；其中 4,070 条通过原子性、复核标记和训练文本长度筛选。得到 6,907 条通过规则和 GQQ 复判的 P1/P2 候选；训练集按至少 1 条可靠显式负例纳入正例，未达到门槛的边保存在 `positive_only.jsonl`。未通过正例筛选的边仍保存在 `positive_pool.jsonl`。
 
-训练行的工具覆盖为 `read` 1,143、`write` 640、`exec` 96、`edit` 61。已有 4,061 条旧版 GQQ 复判候选经 v2 规则重新验收；其他接受的候选由规则生成并经 GQQ 复判。GQQ 新提出的补缺候选在本次严格规则下没有被接受，未为凑数量放宽约束。P4 尚未实现为训练采样器，本次产物只包含显式 P1/P2。全部标签仍为 Silver，未做人工 Gold 审核。数量、来源和输入哈希见 `manifest.json`。
+后续将固定的三负例配比改为训练准入目标：有至少 1 条可靠负例即可入训，3 条仍是优先目标。GQQ 针对 774 个已有部分负例的正例边提出补充候选；8 条初步通过的“错内容”候选经抽查发现 Intent 并未明确约束被修改的内容，已全部隔离。收紧规则后，补缺候选无新增通过者。最终有 2,748 条正例边至少配到一条负例，去重后 `train.jsonl` 为 2,711 行、6,805 个训练三元组；1,322 条合格正例仍无可靠负例，保留在 `positive_only.jsonl`。这说明 GQQ 可辅助提议，但不能弥补 Intent 本身缺少判别条件。
 
-完整 JSONL 数据留在工作区的外部数据目录，不提交 Git。Git 跟踪生成脚本及 `data/manifests/clawgym-bge-negatives-v2/manifest.json`，其中记录输入哈希与各输出文件哈希。重跑时给脚本传入 `--matches`、`--actions`、`--intents`、`--old-negatives`、`--output`；GQQ 凭据由 `INTENT_API_KEY` 提供，兼容接口由 `INTENT_API_BASE_URL` 指定，模型名可通过 `INTENT_MODEL_NAME` 设置。脚本支持从已有 `validated_candidates.jsonl` 续跑；调用 GQQ 时绕过代理。
+最终训练行的工具覆盖为 `read` 1,617、`write` 743、`exec` 176、`edit` 113、`web_fetch` 62。已有 4,061 条旧版 GQQ 复判候选经 v2 规则重新验收；其他接受的候选由规则生成并经 GQQ 复判。P4 尚未实现为训练采样器，本次产物只包含显式 P1/P2。全部标签仍为 Silver，未做人工 Gold 审核。数量、来源和输入哈希见 `manifest.json`。
+
+完整 JSONL 数据留在工作区数据目录，不提交 Git。Git 跟踪生成脚本和 `data/manifests/clawgym-bge-negatives-v2/manifest.json`，后者记录输入及输出哈希。重跑时传入 `--matches`、`--actions`、`--intents`、`--old-negatives` 和 `--output`；API 凭据由 `INTENT_API_KEY` 提供，接口与模型可通过 `INTENT_API_BASE_URL`、`INTENT_MODEL_NAME` 指定。脚本支持从已有 `validated_candidates.jsonl` 续跑，调用时绕过代理。

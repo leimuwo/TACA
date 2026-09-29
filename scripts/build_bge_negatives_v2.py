@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import copy
+import difflib
 import hashlib
 import json
 import os
 import posixpath
+import re
 import shlex
 import sys
 import urllib.request
@@ -139,9 +141,19 @@ def check_candidate(edge, row, all_positive_views):
         if set(a) != set(b) or sum(a[key] != b[key] for key in a) != 1:
             return "p1_not_one_parameter"
         field = next(key for key in a if a[key] != b[key])
-        if field not in {"path", "file", "file_path", "url", "command"} or not isinstance(a[field], str) or not isinstance(b[field], str):
+        if field not in {"path", "file", "file_path", "url", "command", "content"} or not isinstance(a[field], str) or not isinstance(b[field], str):
             return "p1_unsupported_parameter"
-        if field == "command":
+        if field == "content":
+            if before["function"] != "write" or len(b[field]) < 20 or len(b[field]) > MAX_TEXT:
+                return "p1_invalid_content"
+            before_tokens = re.findall(r"\w+|[^\w]+", a[field])
+            after_tokens = re.findall(r"\w+|[^\w]+", b[field])
+            changed = ["".join(before_tokens[i:j]).strip(" \t\r\n\"'.,:;!?()[]{}")
+                       for op, i, j, _, _ in difflib.SequenceMatcher(None, before_tokens, after_tokens, autojunk=False).get_opcodes()
+                       if op in {"replace", "delete"}]
+            if not changed or any(len(span) < 4 or span.lower() not in edge["intent_text"].lower() for span in changed):
+                return "p1_content_not_constrained"
+        elif field == "command":
             try:
                 old_tokens, new_tokens = shlex.split(a[field]), shlex.split(b[field])
             except ValueError:
@@ -199,8 +211,8 @@ def model_call(system, payload, key, retries=2, timeout=35):
     raise RuntimeError(last)
 
 
-VALIDATOR = "Evaluate each Intent and proposed Action using only visible semantics. Accept only a valid P1 wrong target or P2 wrong operation which clearly cannot fully satisfy the Intent. Reject partial fulfillment, supporting/intermediate steps, equivalent positives, ambiguous broad intents, or hidden-state assumptions. Return JSON object results:[{candidate_id,accept,category,reason}]. Every ID exactly once."
-GENERATOR = "Propose at most 3 clear hard-negative Actions for this Intent/positive Action. P1: keep function and every args key; change exactly one string path/file/file_path/url to a clearly wrong target; for exec, change exactly one command target token only if that target is explicit in Intent. P2: only change read->write or write/edit->read, keeping exactly the same target; for simple exec, change only the first command token among python3->cat, python->cat, cat->python3, mkdir->ls, ls->mkdir and preserve all later tokens. All tool arguments must be INSIDE the args object. The entire candidate_action must have function and args fields. Never invent a tool, change content alone, return a positive equivalent, or use partial/supporting steps. If constraints cannot give a clear negative, return an empty list. Return JSON object candidates:[{category,candidate_action,changed_fields,why_incorrect}] and nothing else."
+VALIDATOR = "Evaluate each Intent and proposed Action using only visible semantics. Accept only a valid P1 wrong target/content or P2 wrong operation which clearly cannot fully satisfy the Intent. A difference from the positive Action is not sufficient: the changed detail must be required explicitly by the Intent. Reject partial fulfillment, supporting/intermediate steps, equivalent positives, ambiguous broad intents, or hidden-state assumptions. Return JSON object results:[{candidate_id,accept,category,reason}]. Every ID exactly once."
+GENERATOR = "Propose up to 4 clear hard-negative Actions for the given Intent and positive Action, prioritizing needed_categories. P1: keep function and all args keys; change exactly one target path/file/file_path/url string when the Intent constrains it, or for write change only content so a concrete Intent requirement is contradicted while preserving plausible document format. For exec change exactly one target token only when Intent names that target. P2: change only read->write or write/edit->read, preserving target, or for simple exec change only the first command token among python3->cat, python->cat, cat->python3, mkdir->ls, ls->mkdir. Put every tool argument INSIDE args. Preserve function/args schema, original action id/type if present. Never invent a tool or claim hidden execution results. Reject candidates that still fulfill or partly fulfill the Intent; return empty when unsure. Return JSON object candidates:[{category,candidate_action,changed_fields,why_incorrect}] and nothing else."
 
 
 def validate_batch(batch, edges, key):
@@ -220,6 +232,7 @@ def validate_batch(batch, edges, key):
 
 def generate_for_edge(edge, needed, key):
     payload = {"intent": edge["intent_text"], "positive_action": action_view(edge["positive_action"]),
+               "source_quote": edge.get("source_quote"),
                "needed_categories": needed, "allowed_operations": ["read", "write", "edit", "web_fetch", "exec"],
                "argument_patterns": {"read": {"path": "string"}, "write": {"path": "string", "content": "string"}, "edit": {"path": "string", "edits": "array"}, "web_fetch": {"url": "string"}}}
     try:
@@ -236,6 +249,8 @@ def generation_worth_trying(edge, counts):
     if field and counts[(edge["edge_id"], "P1")] < 2 and explicitly_named(edge["intent_text"], action["args"][field]):
         return True
     if counts[(edge["edge_id"], "P2")] < 1 and function in {"read", "write", "edit"} and field:
+        return True
+    if function == "write" and counts[(edge["edge_id"], "P1")] < 2 and isinstance(action["args"].get("content"), str):
         return True
     if function == "exec" and counts[(edge["edge_id"], "P2")] < 1:
         try:
@@ -390,9 +405,10 @@ def run(args):
             if start % 600 == 0:
                 print(compact({"rule_checked": min(start + args.batch_size * args.workers, len(pending)), "accepted": len(accepted)}), flush=True)
 
-        attempted_path = args.output / "gqq_generation_attempted_edge_ids.txt"
+        attempted_path = args.output / "gqq_generation_attempted_v3_edge_ids.txt"
         attempted = set(attempted_path.read_text(encoding="utf-8").splitlines()) if attempted_path.exists() else set()
-        deficits = [edge for edge in valid_edges if edge["edge_id"] not in attempted and generation_worth_trying(edge, counts)]
+        deficits = [edge for edge in valid_edges if edge["edge_id"] not in attempted
+                    and 0 < counts[(edge["edge_id"], "P1")] + counts[(edge["edge_id"], "P2")] < 3]
         if args.gqq_generate_limit:
             deficits = deficits[:args.gqq_generate_limit]
         print(compact({"deficit_edges": len(deficits), "accepted_before_generation": len(accepted)}), flush=True)
@@ -405,8 +421,10 @@ def run(args):
                 generated = future.result()
                 with attempted_path.open("a", encoding="utf-8") as handle:
                     handle.write(edge["edge_id"] + "\n")
+                append(args.output / "gqq_generation_v3_responses.jsonl",
+                       {"edge_id": edge["edge_id"], "proposals": generated})
                 batch = []
-                for item in generated[:3]:
+                for item in generated[:4]:
                     if not isinstance(item, dict) or item.get("category") not in {"P1", "P2"} or not isinstance(item.get("candidate_action"), dict):
                         status["invalid_generation_response"] += 1
                         continue
@@ -438,7 +456,7 @@ def run(args):
     train, positive_only = [], []
     for edge in valid_edges:
         neg = sorted(selected[edge["edge_id"]], key=lambda x: (x["category"], x["candidate_id"]))
-        if len(neg) < 3:
+        if len(neg) < args.min_negatives:
             positive_only.append({"edge_id": edge["edge_id"], "action_id": edge["action_id"], "intent_id": edge["intent_id"], "accepted_negative_count": len(neg), "missing": {"P1": max(0, 2 - counts[(edge["edge_id"], "P1")]), "P2": max(0, 1 - counts[(edge["edge_id"], "P2")])}})
             continue
         train.append({"query": "[INTENT] " + edge["intent_text"], "pos": [action_text(edge["positive_action"])],
@@ -480,7 +498,9 @@ def run(args):
                 "eligible_by_tool": dict(Counter(x["positive_action"]["function"] for x in valid_edges)),
                 "train_by_tool": dict(Counter(edges[x["edge_id"]]["positive_action"]["function"] for x in train)),
                 "train_grouped_rows": len(train), "collapsed_duplicate_training_rows": collapsed,
-                "train_triplets": 3 * len(train),
+                "train_triplets": sum(len(x["neg"]) for x in train),
+                "minimum_explicit_negatives": args.min_negatives,
+                "train_negative_count_distribution": dict(Counter(len(x["neg"]) for x in train)),
                 "positive_only_rows": len(positive_only),
                 "last_run_exclusions": dict(status), "supervision_tier": "silver_model_validated",
                 "input_sha256": {name: file_sha256(path) for name, path in {"matches": args.matches, "actions": args.actions, "intents": args.intents, "old_negatives": args.old_negatives}.items() if path},
@@ -500,6 +520,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=6)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--gqq-generate-limit", type=int, default=0)
+    parser.add_argument("--min-negatives", type=int, choices=(1, 2, 3), default=1)
     args = parser.parse_args()
     args.key = os.environ["INTENT_API_KEY"]
     run(args)
