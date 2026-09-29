@@ -1,0 +1,105 @@
+{
+  "schema_version": "bge_negatives_v2",
+  "model": "deepseek-v4-flash-gqq",
+  "positive_edges": 5465,
+  "eligible_edges": 4070,
+  "accepted_candidates": 6907,
+  "accepted_by_category": {
+    "P1": 4221,
+    "P2": 2686
+  },
+  "accepted_by_origin": {
+    "previous_gqq_validated": 4061,
+    "rule_donor": 1759,
+    "rule_operation": 713,
+    "rule_exec_operation": 180,
+    "rule_exec_donor": 194
+  },
+  "eligible_by_tool": {
+    "web_fetch": 282,
+    "read": 1650,
+    "write": 743,
+    "exec": 1220,
+    "edit": 114,
+    "process": 25,
+    "browser": 30,
+    "gateway": 2,
+    "session_status": 4
+  },
+  "train_by_tool": {
+    "read": 1617,
+    "write": 743,
+    "exec": 176,
+    "edit": 113,
+    "web_fetch": 62
+  },
+  "train_grouped_rows": 2711,
+  "collapsed_duplicate_training_rows": 37,
+  "train_triplets": 6805,
+  "minimum_explicit_negatives": 1,
+  "train_negative_count_distribution": {
+    "1": 559,
+    "3": 1942,
+    "2": 210
+  },
+  "positive_only_rows": 1322,
+  "last_run_exclusions": {
+    "p1_target_not_explicit": 4096,
+    "training_text_too_long": 4,
+    "model_reject_P2": 2,
+    "generated_p1_command_target_not_explicit": 64,
+    "generated_positive_collision": 451,
+    "generated_p1_command_not_one_token": 38,
+    "generated_p1_target_not_explicit": 662,
+    "generated_p1_content_not_constrained": 40,
+    "generated_p1_unsupported_parameter": 33,
+    "generated_p1_changed_function": 319,
+    "invalid_generation_response": 51,
+    "generated_p2_unsupported_operation": 42,
+    "generated_p1_not_one_parameter": 6,
+    "generated_p1_same_target_name": 15,
+    "generated_p1_command_same_target_name": 2,
+    "model_reject_P1": 1
+  },
+  "supervision_tier": "silver_model_validated",
+  "input_sha256": {
+    "matches": "bdd8697c07aea32379edd1291140e52d58a1f6149544bb1f5e8d17884ef7c0e0",
+    "actions": "68116f05548adb03ae8f00cd49bc3ec163609613ed75c5ccd0bfa4cfd2054ad8",
+    "intents": "ad7091636e3e64e318e4efe5c266dd09d0059d38d4b6099dfc2a7542e2074aa5",
+    "old_negatives": "92df2f56de4be22b79bb66de27f0b7018821a0ffac12d8e586803ec268332a07"
+  },
+  "note": "P4 is sampled dynamically during training; no human Gold review has been claimed.",
+  "dataset_location": "External local data: Project/data/clawgym/bge_negatives_v2_20260929; not committed to Git",
+  "gqq_supplement_attempted_edges": 774,
+  "quarantined_content_candidates": 8,
+  "artifact_integrity": {
+    "positive_pool.jsonl": {
+      "bytes": 8896034,
+      "sha256": "3e9d73258879869bee9524242c00a50cda474cff22b4313c65025f76c5fd4ad7"
+    },
+    "validated_candidates.jsonl": {
+      "bytes": 8688293,
+      "sha256": "f32a7ff11d077d706d5b065d9b01c072142435816b299bcc6efbf52ba90e855c"
+    },
+    "train_grouped.jsonl": {
+      "bytes": 3849195,
+      "sha256": "7f1046ea58aa960d36ca9f90d06e5607a606f2724a53ba29b1d1f9835f618f7b"
+    },
+    "train.jsonl": {
+      "bytes": 2831648,
+      "sha256": "aa7516c12bacd7ba0b2c0ca1d2c947522388ce98a448afc0a8908313f74ba870"
+    },
+    "positive_only.jsonl": {
+      "bytes": 206792,
+      "sha256": "5cbfd057c4f370bf5adce27e141fdb6b0f48588dbe28693673d91aa31660c4dc"
+    },
+    "gqq_generation_v3_responses.jsonl": {
+      "bytes": 1080037,
+      "sha256": "eb6178db9d5c05d5d0ac6ef12cc4d22b1d732f0d2db3f7bc8c4e9ae2c8a3accf"
+    },
+    "quarantined_content_candidates.jsonl": {
+      "bytes": 16953,
+      "sha256": "0d99e9fcee6cbaeaaef09a0d6d1fd878fce833dd428cc8781b3509d3e07d8e4c"
+    }
+  }
+}
