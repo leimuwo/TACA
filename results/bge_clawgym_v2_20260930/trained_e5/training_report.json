@@ -1,0 +1,170 @@
+{
+  "schema_version": "bge_clawgym_silver_training_v1",
+  "base_model": "/inspire/hdd/project/control-technology/public/model_hub/bge-base-en-v1.5",
+  "best_epoch": 3,
+  "best_dev_known_positive_mrr": 0.5237212262986681,
+  "test_evaluated": false,
+  "label_limit": "dev is Silver known-positive retrieval; test remains unopened",
+  "config": {
+    "dataset": "data/clawgym/bge_dataset_split_20260930_v2",
+    "output": "outputs/bge_clawgym_silver_v2_e5",
+    "base_model": "/inspire/hdd/project/control-technology/public/model_hub/bge-base-en-v1.5",
+    "epochs": 5,
+    "batch_size": 8,
+    "eval_batch_size": 32,
+    "accumulation": 4,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.1,
+    "temperature": 0.05,
+    "max_length": 512,
+    "max_grad_norm": 1.0,
+    "log_every": 25,
+    "seed": 20260930,
+    "device": "auto",
+    "dry_run": false
+  },
+  "train_sha256": "4bdc2bed9cef80cb0603de0946b9f062e1b34ac7de5f1fc7bb6b8e3b8877904e",
+  "history": [
+    {
+      "epoch": 1,
+      "mean_loss": 1.0725376826537922,
+      "dev": {
+        "schema_version": "bge_clawgym_silver_retrieval_v1",
+        "split": "dev",
+        "model": "outputs/bge_clawgym_silver_v2_e5/epoch_1",
+        "device": "cuda",
+        "pool_actions": 1944,
+        "known_positive_edges": 1170,
+        "metrics": {
+          "query_count": 1078,
+          "known_positive_at_1": 0.40166975881261596,
+          "known_positive_at_5": 0.6280148423005566,
+          "known_positive_at_10": 0.6920222634508348,
+          "known_positive_mrr": 0.503637832107396,
+          "known_positive_mean_rank": 57.34137291280148
+        },
+        "label_limit": "Silver known positives only. Unlisted actions are unjudged; these are not Gold recall/MRR.",
+        "input_sha256": {
+          "queries": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+          "actions": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+          "qrels": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d"
+        },
+        "max_length": 512,
+        "pooling": "normalized_cls"
+      }
+    },
+    {
+      "epoch": 2,
+      "mean_loss": 0.5566253636504872,
+      "dev": {
+        "schema_version": "bge_clawgym_silver_retrieval_v1",
+        "split": "dev",
+        "model": "outputs/bge_clawgym_silver_v2_e5/epoch_2",
+        "device": "cuda",
+        "pool_actions": 1944,
+        "known_positive_edges": 1170,
+        "metrics": {
+          "query_count": 1078,
+          "known_positive_at_1": 0.4109461966604824,
+          "known_positive_at_5": 0.6252319109461967,
+          "known_positive_at_10": 0.6929499072356216,
+          "known_positive_mrr": 0.5082222426617673,
+          "known_positive_mean_rank": 56.550092764378476
+        },
+        "label_limit": "Silver known positives only. Unlisted actions are unjudged; these are not Gold recall/MRR.",
+        "input_sha256": {
+          "queries": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+          "actions": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+          "qrels": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d"
+        },
+        "max_length": 512,
+        "pooling": "normalized_cls"
+      }
+    },
+    {
+      "epoch": 3,
+      "mean_loss": 0.4742396229460484,
+      "dev": {
+        "schema_version": "bge_clawgym_silver_retrieval_v1",
+        "split": "dev",
+        "model": "outputs/bge_clawgym_silver_v2_e5/epoch_3",
+        "device": "cuda",
+        "pool_actions": 1944,
+        "known_positive_edges": 1170,
+        "metrics": {
+          "query_count": 1078,
+          "known_positive_at_1": 0.42393320964749537,
+          "known_positive_at_5": 0.6465677179962894,
+          "known_positive_at_10": 0.7077922077922078,
+          "known_positive_mrr": 0.5237212262986681,
+          "known_positive_mean_rank": 51.61224489795919
+        },
+        "label_limit": "Silver known positives only. Unlisted actions are unjudged; these are not Gold recall/MRR.",
+        "input_sha256": {
+          "queries": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+          "actions": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+          "qrels": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d"
+        },
+        "max_length": 512,
+        "pooling": "normalized_cls"
+      }
+    },
+    {
+      "epoch": 4,
+      "mean_loss": 0.403285416829397,
+      "dev": {
+        "schema_version": "bge_clawgym_silver_retrieval_v1",
+        "split": "dev",
+        "model": "outputs/bge_clawgym_silver_v2_e5/epoch_4",
+        "device": "cuda",
+        "pool_actions": 1944,
+        "known_positive_edges": 1170,
+        "metrics": {
+          "query_count": 1078,
+          "known_positive_at_1": 0.4155844155844156,
+          "known_positive_at_5": 0.6335807050092764,
+          "known_positive_at_10": 0.6985157699443414,
+          "known_positive_mrr": 0.5160920258125838,
+          "known_positive_mean_rank": 49.83395176252319
+        },
+        "label_limit": "Silver known positives only. Unlisted actions are unjudged; these are not Gold recall/MRR.",
+        "input_sha256": {
+          "queries": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+          "actions": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+          "qrels": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d"
+        },
+        "max_length": 512,
+        "pooling": "normalized_cls"
+      }
+    },
+    {
+      "epoch": 5,
+      "mean_loss": 0.38836127005594406,
+      "dev": {
+        "schema_version": "bge_clawgym_silver_retrieval_v1",
+        "split": "dev",
+        "model": "outputs/bge_clawgym_silver_v2_e5/epoch_5",
+        "device": "cuda",
+        "pool_actions": 1944,
+        "known_positive_edges": 1170,
+        "metrics": {
+          "query_count": 1078,
+          "known_positive_at_1": 0.4137291280148423,
+          "known_positive_at_5": 0.634508348794063,
+          "known_positive_at_10": 0.6985157699443414,
+          "known_positive_mrr": 0.5147249865655362,
+          "known_positive_mean_rank": 50.460111317254174
+        },
+        "label_limit": "Silver known positives only. Unlisted actions are unjudged; these are not Gold recall/MRR.",
+        "input_sha256": {
+          "queries": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+          "actions": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+          "qrels": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d"
+        },
+        "max_length": 512,
+        "pooling": "normalized_cls"
+      }
+    }
+  ]
+}

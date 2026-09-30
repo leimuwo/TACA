@@ -9,5 +9,12 @@ description = "Research tools for observable Thought, execution Intent, and Acti
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+training = [
+  "numpy>=1.26",
+  "torch>=2.2",
+  "transformers>=4.44",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]

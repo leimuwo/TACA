@@ -1,0 +1,24 @@
+{
+  "schema_version": "bge_clawgym_silver_retrieval_v1",
+  "split": "dev",
+  "model": "/inspire/hdd/project/control-technology/public/model_hub/bge-base-en-v1.5",
+  "device": "cuda",
+  "pool_actions": 1944,
+  "known_positive_edges": 1170,
+  "metrics": {
+    "query_count": 1078,
+    "known_positive_at_1": 0.274582560296846,
+    "known_positive_at_5": 0.47959183673469385,
+    "known_positive_at_10": 0.5528756957328386,
+    "known_positive_mrr": 0.3693929262691329,
+    "known_positive_mean_rank": 177.31539888682747
+  },
+  "label_limit": "Silver known positives only. Unlisted actions are unjudged; these are not Gold recall/MRR.",
+  "input_sha256": {
+    "queries": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+    "actions": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+    "qrels": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d"
+  },
+  "max_length": 512,
+  "pooling": "normalized_cls"
+}
