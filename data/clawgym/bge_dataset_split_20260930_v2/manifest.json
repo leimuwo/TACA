@@ -1,0 +1,44 @@
+{
+  "schema_version": "bge_silver_split_dataset_v1",
+  "date": "2026-09-30",
+  "counts": {
+    "train": {
+      "rows": 2711,
+      "triplets": 6802,
+      "removed_positive_collisions_or_duplicates": 3,
+      "removed_rows_without_negatives": 0
+    },
+    "dev": {
+      "trajectories": 139,
+      "queries": 1078,
+      "candidate_actions": 1944,
+      "known_positive_edges": 1170
+    },
+    "test": {
+      "trajectories": 139,
+      "queries": 1074,
+      "candidate_actions": 1997,
+      "known_positive_edges": 1179
+    }
+  },
+  "supervision": "silver_model_preliminary_and_validated",
+  "evaluation_ready": "silver_retrieval_diagnostic_only",
+  "known_positive_only": true,
+  "input_sha256": {
+    "train_rows": "aa7516c12bacd7ba0b2c0ca1d2c947522388ce98a448afc0a8908313f74ba870",
+    "train_grouped": "7f1046ea58aa960d36ca9f90d06e5607a606f2724a53ba29b1d1f9835f618f7b",
+    "matches": "bdd8697c07aea32379edd1291140e52d58a1f6149544bb1f5e8d17884ef7c0e0",
+    "actions": "68116f05548adb03ae8f00cd49bc3ec163609613ed75c5ccd0bfa4cfd2054ad8",
+    "intents": "ad7091636e3e64e318e4efe5c266dd09d0059d38d4b6099dfc2a7542e2074aa5"
+  },
+  "output_sha256": {
+    "dev/actions.jsonl": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+    "dev/qrels.jsonl": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d",
+    "dev/queries.jsonl": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+    "test/actions.jsonl": "47d0e870a5d2bb5d008bb7c57bd5db65e87137a9b733db2360d97b82e52cd5fb",
+    "test/qrels.jsonl": "81a55c40cf3e84c903906110128b8a1e6b7521460c2afe5bea3462ed2608c587",
+    "test/queries.jsonl": "aab4950ee587182f30b2679a02871674adda969ebd7f36a54437b67e95278760",
+    "train/train.jsonl": "4bdc2bed9cef80cb0603de0946b9f062e1b34ac7de5f1fc7bb6b8e3b8877904e",
+    "train/train_grouped.jsonl": "1988dba5e4369ad2b644a9f37b2fcc9f0ac3b7680f68fd9fcdbb5aa1d882dd5a"
+  }
+}

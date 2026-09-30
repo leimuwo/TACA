@@ -1,0 +1,43 @@
+{
+  "schema_version": "bge_clawgym_v2_github_artifacts_v1",
+  "date": "2026-09-30",
+  "labels": "silver_known_positives_only",
+  "release_tag": "bge-clawgym-v2-20260930",
+  "file_sha256": {
+    "data/clawgym/bge_dataset_split_20260930_v2/README.md": "41d97128649790cb77dddf9d5dbb894617c6669d6e8889166c71e3e0872b7205",
+    "data/clawgym/bge_dataset_split_20260930_v2/dev/actions.jsonl": "93f4f8bbda1946257ae261c9c644bc60ff5214256b919506a911c2cbf6e8e3f1",
+    "data/clawgym/bge_dataset_split_20260930_v2/dev/qrels.jsonl": "9067fb3d005ab37a0638afe00e2b5d0f1149481dac99c154749db9b79388d96d",
+    "data/clawgym/bge_dataset_split_20260930_v2/dev/queries.jsonl": "216567d259fa17184e2a82621485d5d858126500da843639b5523ba5e6a557dd",
+    "data/clawgym/bge_dataset_split_20260930_v2/manifest.json": "6f9df7d91a265480181070e0ef2a3e7e362afd141213c2d7ccf9f58f2863de8e",
+    "data/clawgym/bge_dataset_split_20260930_v2/test/actions.jsonl": "47d0e870a5d2bb5d008bb7c57bd5db65e87137a9b733db2360d97b82e52cd5fb",
+    "data/clawgym/bge_dataset_split_20260930_v2/test/qrels.jsonl": "81a55c40cf3e84c903906110128b8a1e6b7521460c2afe5bea3462ed2608c587",
+    "data/clawgym/bge_dataset_split_20260930_v2/test/queries.jsonl": "aab4950ee587182f30b2679a02871674adda969ebd7f36a54437b67e95278760",
+    "data/clawgym/bge_dataset_split_20260930_v2/train/train.jsonl": "4bdc2bed9cef80cb0603de0946b9f062e1b34ac7de5f1fc7bb6b8e3b8877904e",
+    "data/clawgym/bge_dataset_split_20260930_v2/train/train_grouped.jsonl": "1988dba5e4369ad2b644a9f37b2fcc9f0ac3b7680f68fd9fcdbb5aa1d882dd5a",
+    "data/clawgym/bge_v2_error_audit_20260930/reviewed_cases.jsonl": "6d61e871ef53708a8addebcc57900672e7dd6e9063adfa88313b55caf92a4a43",
+    "data/clawgym/bge_v2_error_audit_20260930/sample_evidence.jsonl": "29ec16271a2764f9e1800b99c0c41b8db8691f9b885e710e2f650f81a251845f",
+    "results/bge_clawgym_v2_20260930/README.md": "3c266797a7ae02a6b004401a1f43cfcff025f2a3aac48264e466fffdea62e22d",
+    "results/bge_clawgym_v2_20260930/baseline_dev/metrics.json": "f0a15521f0e6818de1b93dd2efe16ce69b3155e4cb16ed2235b7a36575e7200f",
+    "results/bge_clawgym_v2_20260930/baseline_dev/rankings.jsonl": "5b0deee06c0c9ec926d08f242b343162a04be850f5bac0398e076366caf471d5",
+    "results/bge_clawgym_v2_20260930/trained_e5/training_report.json": "7a464d4322d74fdbfe0fadfe8a420d03bd8450f0e7a48167300c900a86af8c71",
+    "results/bge_clawgym_v2_20260930/trained_v2/training_report.json": "6e80a20e3c2a0edd07757adf9781c32897e818a5f48f421a95561da89e7327c6",
+    "results/bge_clawgym_v2_20260930/trained_v2_test/metrics.json": "2011ec25e70173e08d9696d52f5985eabbf991722653fafad684c5dd12f744ff",
+    "results/bge_clawgym_v2_20260930/trained_v2_test/rankings.jsonl": "7b1408ebb20d4fdd72d09b4551335149bb2b040bf74eb7085dad480edf2a522d"
+  },
+  "best_checkpoints": {
+    "trained_v2": {
+      "local_source": "outputs/bge_clawgym_silver_v2/best/model.safetensors",
+      "file_bytes": 437951328,
+      "model_safetensors_sha256": "45723929a6b9076b5a2c3797de4fda03074e4cdac808799bb6c19ced913ea019"
+    },
+    "trained_e5": {
+      "local_source": "outputs/bge_clawgym_silver_v2_e5/best/model.safetensors",
+      "file_bytes": 437951328,
+      "model_safetensors_sha256": "114881763e95449e893b7f3c30918366d2c57be68d699687faa21d3a0c2e38b3"
+    }
+  },
+  "release_asset_sha256": {
+    "bge_clawgym_silver_v2_best.tar.gz": "1981ba2de923470d4084ae032a62c0397a716d4a96428109b6e78ed9d4f65113",
+    "bge_clawgym_silver_v2_e5_best.tar.gz": "b566dcb869b6f61209f797ca4eaa2b578943ef72baed879b903d8fbdb7879274"
+  }
+}
