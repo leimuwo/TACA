@@ -30,3 +30,7 @@ logs/
 Thumbs.db
 .idea/
 .vscode/
+
+# ClawGym external experiment datasets
+data/clawgym/
+*.egg-info/

@@ -183,6 +183,13 @@ evaluation results.
 
 ## Research Roadmap
 
+The current ClawGym/SWE work adds temporal Intent extraction, reviewed hard
+negatives, held-out pair evaluation, and a trained Cross-Encoder coverage
+component. Start with the [October 14 integration summary](docs/2026-10-14-ta-pr-summary.md)
+for training, evaluation, and local HTTP usage. Bulk datasets and model weights
+are external; set `TA_MODEL_ROOT` to a local model cache (default `../model_hub`)
+and pass dataset paths explicitly when reproducing experiments.
+
 Phase 1 builds human-reviewed one-Intent–one-short-Action data, retrieval
 baselines, and a shared bi-encoder with parameter-sensitive hard negatives.
 Later phases add Kimi multi-positive examples and collective Action-set

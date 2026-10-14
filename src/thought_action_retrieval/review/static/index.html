@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilot review</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 1100px; margin: 0 auto; padding: 1.25rem; }
+    header, nav, .row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+    header { justify-content: space-between; }
+    article { border: 1px solid #8886; border-radius: .6rem; padding: 1rem; margin: 1rem 0; }
+    dl { display: grid; grid-template-columns: minmax(10rem, 1fr) 4fr; gap: .55rem; }
+    dt { font-weight: 700; }
+    dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    mark { padding: .15rem .3rem; }
+    button { padding: .55rem .75rem; }
+    .hidden { display: none; }
+    #message.error { color: #d33; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pilot review</h1>
+    <div class="row">
+      <label>Queue <select id="queue">
+        <option>intent_first_pass</option><option>pair_first_pass</option>
+        <option>generated_first_pass</option><option>blind_repeat</option>
+        <option>flagged_difficult</option><option>self_adjudication</option>
+      </select></label>
+      <label>Reviewer <input id="reviewer" value="local-reviewer"></label>
+      <button id="load">Load</button>
+    </div>
+  </header>
+
+  <div id="progress" aria-live="polite"></div>
+  <div id="message" aria-live="assertive"></div>
+
+  <article id="intent-mode" class="hidden">
+    <h2>Intent review</h2>
+    <dl>
+      <dt>Task</dt><dd data-field="task"></dd>
+      <dt>Context</dt><dd data-field="context"></dd>
+      <dt>Thought</dt><dd data-field="thought"></dd>
+      <dt>source_quote</dt><dd><mark data-field="source_quote"></mark></dd>
+      <dt>Intent</dt><dd data-field="intent"></dd>
+      <dt>scope</dt><dd data-field="scope"></dd>
+      <dt>eligibility</dt><dd data-field="eligibility"></dd>
+      <dt>risk reasons</dt><dd data-field="risk_reasons"></dd>
+    </dl>
+  </article>
+
+  <article id="pair-mode" class="hidden">
+    <h2>Pair review</h2>
+    <dl>
+      <dt>Frozen Intent</dt><dd data-field="intent"></dd>
+      <dt>full raw Action JSON</dt><dd><pre data-field="raw_action"></pre></dd>
+      <dt>normalized operation</dt><dd data-field="normalized_operation"></dd>
+      <dt>targets</dt><dd data-field="normalized_targets"></dd>
+      <dt>candidate basis</dt><dd data-field="candidate_basis"></dd>
+      <dt>action_has_extras</dt><dd data-field="action_has_extras"></dd>
+    </dl>
+    <p>Pair labels: 1 exact_match · 2 partial_match · 3 object_mismatch · 4 type_mismatch · 5 no_action</p>
+  </article>
+
+  <article id="generated-mode" class="hidden">
+    <h2>Generated sample review</h2>
+    <dl>
+      <dt>before Action</dt><dd><pre data-field="before_action"></pre></dd>
+      <dt>after Action</dt><dd><pre data-field="after_action"></pre></dd>
+      <dt>donor</dt><dd data-field="donor"></dd>
+      <dt>changed dimensions</dt><dd data-field="changed_dimensions"></dd>
+      <dt>target label</dt><dd data-field="target_label"></dd>
+      <dt>observability evidence</dt><dd data-field="observability_evidence"></dd>
+    </dl>
+  </article>
+
+  <nav aria-label="review actions">
+    <button data-key="A">A accept suggestion</button>
+    <button data-key="V">V valid Intent</button>
+    <button data-key="X">X invalid/exclude</button>
+    <button data-key="S">S scope change</button>
+    <button data-key="G">G granularity revision</button>
+    <button data-key="F">F flag</button>
+    <button data-key="U">U undo</button>
+    <button data-key="P">P previous</button>
+    <button data-key="N">N next</button>
+  </nav>
+
+  <script>
+    const state = { current: null, startedAt: null, lastEventId: null, history: [], position: -1 };
+    const pairLabels = ['exact_match', 'partial_match', 'object_mismatch', 'type_mismatch', 'no_action'];
+    const byId = id => document.getElementById(id);
+    const showMessage = (text, error = false) => {
+      byId('message').textContent = text;
+      byId('message').className = error ? 'error' : '';
+    };
+    const display = value => typeof value === 'string' ? value : JSON.stringify(value ?? '', null, 2);
+
+    async function request(path, options = {}) {
+      const response = await fetch(path, { headers: {'Content-Type': 'application/json'}, ...options });
+      const value = response.headers.get('Content-Type')?.includes('json') ? await response.json() : await response.text();
+      if (!response.ok) throw new Error(value.error || response.statusText);
+      return value;
+    }
+
+    function render(item) {
+      state.current = item;
+      state.startedAt = Date.now() / 1000;
+      for (const id of ['intent-mode', 'pair-mode', 'generated-mode']) byId(id).classList.add('hidden');
+      if (!item) { showMessage('Queue complete.'); return; }
+      const mode = item.stage === 'pair' ? 'pair-mode' : item.stage === 'generated' ? 'generated-mode' : 'intent-mode';
+      byId(mode).classList.remove('hidden');
+      byId(mode).querySelectorAll('[data-field]').forEach(node => {
+        const key = node.dataset.field;
+        node.textContent = display(item.payload[key]);
+      });
+      showMessage(`${item.queue_name}: ${item.record_id}`);
+    }
+
+    async function loadNext() {
+      if (state.position + 1 < state.history.length) {
+        state.position += 1;
+        render(state.history[state.position]);
+        return;
+      }
+      try {
+        const value = await request(`/api/next?queue=${encodeURIComponent(byId('queue').value)}`);
+        if (value.item && state.history[state.history.length - 1]?.record_id !== value.item.record_id) {
+          state.history.push(value.item);
+          state.position = state.history.length - 1;
+        }
+        render(value.item);
+        await loadProgress();
+      } catch (error) { showMessage(error.message, true); }
+    }
+
+    function completeEvent(decision, usedSuggestion = false) {
+      const item = state.current;
+      if (!item) throw new Error('No review item is loaded.');
+      return {
+        reviewer_id: byId('reviewer').value,
+        stage: item.stage,
+        queue_name: item.queue_name,
+        record_id: item.record_id,
+        risk_stratum: item.risk_stratum,
+        started_at: state.startedAt,
+        submitted_at: Date.now() / 1000,
+        idle_seconds: 0,
+        decision,
+        used_suggestion: usedSuggestion,
+        revisit: false
+      };
+    }
+
+    async function submitDecision(decision, endpoint = '/api/submit', usedSuggestion = false) {
+      try {
+        const saved = await request(endpoint, { method: 'POST', body: JSON.stringify(completeEvent(decision, usedSuggestion)) });
+        state.lastEventId = saved.event.review_event_id;
+        state.history = [];
+        state.position = -1;
+        await loadNext();
+      } catch (error) { showMessage(error.message, true); }
+    }
+
+    async function undo() {
+      if (!state.lastEventId) return showMessage('Nothing to undo.', true);
+      try {
+        await request('/api/undo', { method: 'POST', body: JSON.stringify({
+          review_event_id: state.lastEventId,
+          reviewer_id: byId('reviewer').value,
+          submitted_at: Date.now() / 1000
+        })});
+        state.history = [];
+        state.position = -1;
+        await loadNext();
+      } catch (error) { showMessage(error.message, true); }
+    }
+
+    async function loadProgress() {
+      const value = await request('/api/progress');
+      byId('progress').textContent = `${value.remaining_items} remaining · ${value.decisions_per_hour.toFixed(1)} decisions/hour · projected Full-900 ${value.projected_full_900_review_hours.toFixed(1)} hours`;
+    }
+
+    async function handleKey(key) {
+      const payload = state.current?.payload || {};
+      switch (key.toLowerCase()) {
+        case 'a': {
+          const suggestion = payload.automatic_suggestion ?? payload.preliminary_label ?? payload.suggestion;
+          const label = typeof suggestion === 'object' ? suggestion.label : suggestion;
+          return submitDecision({label, reason: 'accepted visible suggestion'}, '/api/submit', true);
+        }
+        case '1': return submitDecision({label: pairLabels[0], reason: 'keyboard label'});
+        case '2': return submitDecision({label: pairLabels[1], reason: 'keyboard label'});
+        case '3': return submitDecision({label: pairLabels[2], reason: 'keyboard label'});
+        case '4': return submitDecision({label: pairLabels[3], reason: 'keyboard label'});
+        case '5': return submitDecision({label: pairLabels[4], reason: 'keyboard label'});
+        case 'v': return submitDecision({label: 'valid_intent', reason: 'keyboard decision'});
+        case 'x': return submitDecision({label: 'invalid_or_exclude', reason: 'keyboard decision'});
+        case 's': return submitDecision({action: 'scope_change', reason: prompt('Scope change') || ''});
+        case 'g': return submitDecision({action: 'granularity_revision', reason: prompt('Granularity revision') || ''});
+        case 'f': return submitDecision({action: 'flag', reason: 'difficult'}, '/api/flag');
+        case 'u': return undo();
+        case 'n': return loadNext();
+        case 'p':
+          if (state.position > 0) { state.position -= 1; render(state.history[state.position]); }
+          return;
+      }
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.target.matches('input, textarea, select')) return;
+      if ('a12345vxsgfunp'.includes(event.key.toLowerCase())) {
+        event.preventDefault();
+        handleKey(event.key);
+      }
+    });
+    document.querySelectorAll('[data-key]').forEach(button => button.addEventListener('click', () => handleKey(button.dataset.key)));
+    byId('load').addEventListener('click', () => { state.history = []; state.position = -1; loadNext(); });
+    loadNext();
+  </script>
+</body>
+</html>

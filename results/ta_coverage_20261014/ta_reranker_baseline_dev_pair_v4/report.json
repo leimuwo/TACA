@@ -1,0 +1,23 @@
+{
+  "split": "dev",
+  "pairs": 200,
+  "excluded": 0,
+  "label_status": "GLM weak supervision; NOT human Gold",
+  "threshold": 0.0,
+  "checkpoint": "../model_hub/bge-reranker-v2-m3",
+  "pairs_sha256": "ac4cf554ebfb627bd113b0dd4ff9c3adc8c9ffa33f6c6daa85069120071c3d3a",
+  "train_sha256": "c61aba3bcd31395b1d9af7e0a32f398e7e82e5827ab2ef3388e6118fdc9b87a1",
+  "internal_validation_sha256": "2bc17105c3ed68285d07aafdab9fe67151e07918ba1c4217095ba7207ce85ebc",
+  "metrics": {
+    "accuracy": 0.82,
+    "precision": 0.8873239436619719,
+    "recall": 0.6923076923076923,
+    "f1": 0.7777777777777779,
+    "confusion": {
+      "tp": 63,
+      "fp": 8,
+      "fn": 28,
+      "tn": 101
+    }
+  }
+}

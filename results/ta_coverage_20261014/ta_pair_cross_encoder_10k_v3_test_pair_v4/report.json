@@ -1,0 +1,23 @@
+{
+  "split": "test",
+  "pairs": 250,
+  "excluded": 0,
+  "label_status": "GLM weak supervision; NOT human Gold",
+  "threshold": 0.0,
+  "checkpoint": "outputs/ta_pair_cross_encoder_10k_v3/best",
+  "pairs_sha256": "eb993bc858dce14903a46d01034939548692ffa10b32cfeacc02fd8bd2d99310",
+  "train_sha256": "c61aba3bcd31395b1d9af7e0a32f398e7e82e5827ab2ef3388e6118fdc9b87a1",
+  "internal_validation_sha256": "2bc17105c3ed68285d07aafdab9fe67151e07918ba1c4217095ba7207ce85ebc",
+  "metrics": {
+    "accuracy": 0.948,
+    "precision": 0.9444444444444444,
+    "recall": 0.9357798165137615,
+    "f1": 0.9400921658986177,
+    "confusion": {
+      "tp": 102,
+      "fp": 6,
+      "fn": 7,
+      "tn": 135
+    }
+  }
+}
