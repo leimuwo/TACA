@@ -24,10 +24,14 @@ from thought_action_retrieval.data.paths import (
     resolve_data_root,
     resolve_under_data_root,
 )
+from thought_action_retrieval.matching.v2_schema import prompt_bundle_sha256
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PROMPT_PATH = REPOSITORY_ROOT / "prompts" / "thought_to_intent.md"
+TEMPORAL_PROMPT_PATH = (
+    REPOSITORY_ROOT / "prompts" / "thought_to_temporal_intent.md"
+)
 
 
 @dataclass(frozen=True)
@@ -66,6 +70,10 @@ def load_prompt_bundle(path: Path) -> PromptBundle:
 
 
 PROMPTS = load_prompt_bundle(DEFAULT_PROMPT_PATH)
+TEMPORAL_PROMPTS = load_prompt_bundle(TEMPORAL_PROMPT_PATH)
+TEMPORAL_SCOPES = frozenset(
+    {"current", "future", "conditional", "uncertain"}
+)
 DEFAULT_KIMI_RELATIVE = Path(
     "SWE-agent-trajectories/test_data/kimi_selected_json"
 )
@@ -79,6 +87,18 @@ DEFAULT_OUTPUT_RELATIVE = Path(
 
 PRINT_LOCK = threading.Lock()
 
+SOURCE_QUOTE_CORRECTION = """
+
+CORRECTION AFTER VALIDATION FAILURE:
+The previous response used a source_quote that was not an exact contiguous substring of OBSERVABLE THOUGHT. Regenerate the full JSON response. Copy every source_quote verbatim, including capitalization, punctuation, and whitespace, from one contiguous span of OBSERVABLE THOUGHT. Do not paraphrase or join text across line breaks. The intent_text may resolve references from PRECEDING CONTEXT, but the source_quote must still come only from OBSERVABLE THOUGHT. When the Thought uses a short or anaphoric action cue, copy only the short action cue as source_quote; do not expand it with resolved target text. If no exact quote supports an Intent, return no Intent instead of inventing a quote.
+""".rstrip()
+
+TEMPORAL_SCOPE_CORRECTION = """
+
+CORRECTION AFTER TEMPORAL SCOPE VALIDATION FAILURE:
+The previous response used a missing or invalid temporal_scope. Regenerate the full JSON response. Every execution intent must use exactly one of: current, future, conditional, uncertain. Classify only from OBSERVABLE THOUGHT and PRECEDING CONTEXT; do not infer any Action.
+""".rstrip()
+
 
 def read_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
@@ -90,6 +110,19 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def normalize_text(value: Any) -> str:
     return value if isinstance(value, str) else ""
+
+
+def observable_thought(message: dict[str, Any]) -> str:
+    """Return observable assistant reasoning across supported source shapes."""
+    assistant_thought = message.get("assistant_thought")
+    if isinstance(assistant_thought, dict):
+        value = normalize_text(assistant_thought.get("content")).strip()
+        if value:
+            return value
+    reasoning = normalize_text(message.get("reasoning_content")).strip()
+    if reasoning:
+        return reasoning
+    return normalize_text(message.get("content")).strip()
 
 
 def portable_source_name(source_path: Path, data_root: Path | None) -> str:
@@ -108,9 +141,32 @@ def truncate_context(text: str, context_chars: int) -> str:
     return "[Earlier context truncated]\n" + text[-context_chars:]
 
 
+def render_tool_call(call: dict[str, Any]) -> str:
+    """Render legacy and OpenAI-compatible tool-call dictionaries."""
+    function = call.get("function")
+    if isinstance(function, dict):
+        name = function.get("name") or "unknown"
+        arguments = function.get("arguments")
+        if isinstance(arguments, str):
+            try:
+                args = json.loads(arguments)
+            except json.JSONDecodeError:
+                args = {"raw_arguments": arguments}
+        else:
+            args = arguments or {}
+    else:
+        name = function or "unknown"
+        args = call.get("args") or {}
+    return f"{name}({json.dumps(args, ensure_ascii=False, sort_keys=True)})"
+
+
 def render_kimi_message(message: dict[str, Any]) -> str:
     role = str(message.get("role") or "unknown").upper()
-    content = normalize_text(message.get("content")).strip()
+    content = (
+        observable_thought(message)
+        if message.get("role") == "assistant"
+        else normalize_text(message.get("content")).strip()
+    )
     chunks = [f"{role}: {content}" if content else f"{role}: [empty content]"]
     tool_calls = message.get("tool_calls") or []
     if isinstance(tool_calls, list) and tool_calls:
@@ -118,9 +174,7 @@ def render_kimi_message(message: dict[str, Any]) -> str:
         for call in tool_calls:
             if not isinstance(call, dict):
                 continue
-            rendered.append(
-                f"{call.get('function', 'unknown')}({json.dumps(call.get('args') or {}, ensure_ascii=False, sort_keys=True)})"
-            )
+            rendered.append(render_tool_call(call))
         if rendered:
             chunks.append("ACTIONS: " + " | ".join(rendered))
     return "\n".join(chunks)
@@ -148,7 +202,7 @@ def extract_kimi_steps(trajectory: dict[str, Any], context_chars: int = 6000) ->
                 "source_index": message_index,
                 "user_request": user_request,
                 "preceding_context": truncate_context(preceding or "[No preceding context]", context_chars),
-                "thought": normalize_text(message.get("content")).strip(),
+                "thought": observable_thought(message),
                 "actual_actions": actual_actions,
             }
         )
@@ -205,7 +259,7 @@ def kimi_selection_score(path: Path) -> tuple[float, int, int, str]:
         and isinstance(message.get("tool_calls"), list)
         and message.get("tool_calls")
     ]
-    direct = sum(bool(normalize_text(message.get("content")).strip()) for message in action_messages)
+    direct = sum(bool(observable_thought(message)) for message in action_messages)
     coverage = direct / len(action_messages) if action_messages else 0.0
     total_actions = sum(len(message.get("tool_calls") or []) for message in action_messages)
     return (-coverage, -direct, -total_actions, path.name)
@@ -226,8 +280,15 @@ def select_trajectory_files(
     ]
 
 
-def build_user_prompt(step: dict[str, Any]) -> str:
-    return PROMPTS.user_template.format(
+def prompts_for_mode(temporal_scope: bool) -> PromptBundle:
+    """Return the reviewed prompt bundle for one extraction mode."""
+    return TEMPORAL_PROMPTS if temporal_scope else PROMPTS
+
+
+def build_user_prompt(
+    step: dict[str, Any], *, prompts: PromptBundle = PROMPTS
+) -> str:
+    return prompts.user_template.format(
         thought_step=step["thought_step"],
         user_request=step["user_request"] or "[No user request provided]",
         preceding_context=step["preceding_context"] or "[No preceding context]",
@@ -247,7 +308,11 @@ def parse_json_response(text: str) -> dict[str, Any]:
 
 
 def validate_intent_result(
-    parsed: dict[str, Any], thought_step: int, thought: str
+    parsed: dict[str, Any],
+    thought_step: int,
+    thought: str,
+    *,
+    temporal_scope: bool = False,
 ) -> dict[str, Any]:
     if parsed.get("thought_step") != thought_step:
         raise ValueError(f"thought_step must equal {thought_step}")
@@ -269,13 +334,19 @@ def validate_intent_result(
             raise ValueError("source_quote must be a non-empty string")
         if source_quote not in thought:
             raise ValueError("source_quote must be an exact substring of the Thought")
-        normalized.append(
-            {
-                "intent_id": expected_id,
-                "intent_text": intent_text.strip(),
-                "source_quote": source_quote,
-            }
-        )
+        normalized_intent = {
+            "intent_id": expected_id,
+            "intent_text": intent_text.strip(),
+            "source_quote": source_quote,
+        }
+        if temporal_scope:
+            scope = intent.get("temporal_scope")
+            if scope not in TEMPORAL_SCOPES:
+                raise ValueError(
+                    "temporal_scope must be current, future, conditional, or uncertain"
+                )
+            normalized_intent["temporal_scope"] = scope
+        normalized.append(normalized_intent)
     no_intent_reason = parsed.get("no_intent_reason")
     if normalized:
         if no_intent_reason is not None:
@@ -289,24 +360,45 @@ def validate_intent_result(
     }
 
 
-def build_chat_payload(user_prompt: str, model: str) -> dict[str, Any]:
-    return {
+def build_chat_payload(
+    user_prompt: str,
+    model: str,
+    *,
+    json_response_format: bool = True,
+    prompts: PromptBundle = PROMPTS,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "model": model,
         "messages": [
-            {"role": "system", "content": PROMPTS.system},
+            {"role": "system", "content": prompts.system},
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0,
         "max_tokens": 4000,
-        "response_format": {"type": "json_object"},
         "stream": False,
     }
+    if json_response_format:
+        payload["response_format"] = {"type": "json_object"}
+    return payload
 
 
 def request_chat_completion(
-    *, base_url: str, api_key: str, model: str, user_prompt: str, timeout: int
+    *,
+    base_url: str,
+    api_key: str,
+    model: str,
+    user_prompt: str,
+    timeout: int,
+    no_proxy: bool = False,
+    json_response_format: bool = True,
+    prompts: PromptBundle = PROMPTS,
 ) -> tuple[str, dict[str, Any]]:
-    payload = build_chat_payload(user_prompt, model)
+    payload = build_chat_payload(
+        user_prompt,
+        model,
+        json_response_format=json_response_format,
+        prompts=prompts,
+    )
     request = urllib.request.Request(
         base_url.rstrip("/") + "/chat/completions",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -316,7 +408,12 @@ def request_chat_completion(
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    opener = (
+        urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        if no_proxy
+        else urllib.request.build_opener()
+    )
+    with opener.open(request, timeout=timeout) as response:
         body = json.loads(response.read().decode("utf-8"))
     choices = body.get("choices") or []
     if not choices:
@@ -335,8 +432,13 @@ def extract_with_retries(
     model: str,
     timeout: int,
     max_retries: int,
+    no_proxy: bool,
+    json_response_format: bool,
+    temporal_scope: bool = False,
 ) -> tuple[dict[str, Any], str, dict[str, Any], int]:
-    user_prompt = build_user_prompt(step)
+    prompts = prompts_for_mode(temporal_scope)
+    user_prompt = build_user_prompt(step, prompts=prompts)
+    request_prompt = user_prompt
     last_error: Exception | None = None
     for attempt in range(1, max_retries + 1):
         try:
@@ -344,14 +446,31 @@ def extract_with_retries(
                 base_url=base_url,
                 api_key=api_key,
                 model=model,
-                user_prompt=user_prompt,
+                user_prompt=request_prompt,
                 timeout=timeout,
+                no_proxy=no_proxy,
+                json_response_format=json_response_format,
+                prompts=prompts,
             )
             parsed = parse_json_response(raw)
-            result = validate_intent_result(parsed, step["thought_step"], step["thought"])
+            result = validate_intent_result(
+                parsed,
+                step["thought_step"],
+                step["thought"],
+                temporal_scope=temporal_scope,
+            )
             return result, raw, usage, attempt
         except Exception as exc:  # network, JSON, and schema errors all retry
             last_error = exc
+            if "source_quote must be an exact substring" in str(exc):
+                request_prompt = (
+                    user_prompt
+                    + SOURCE_QUOTE_CORRECTION
+                    + "\n\nEXACT OBSERVABLE THOUGHT TO COPY FROM:\n"
+                    + step["thought"]
+                )
+            elif "temporal_scope" in str(exc):
+                request_prompt = user_prompt + TEMPORAL_SCOPE_CORRECTION
             if attempt < max_retries:
                 time.sleep(min(2 ** (attempt - 1) + random.random(), 8.0))
     raise RuntimeError(f"intent extraction failed after {max_retries} attempts: {last_error}")
@@ -382,9 +501,22 @@ def prepare_output_record(
     model: str,
     base_url: str,
     data_root: Path | None,
+    no_proxy: bool,
+    json_response_format: bool,
+    *,
+    temporal_scope: bool = False,
+    extraction_run_id: str = "default",
 ) -> dict[str, Any]:
+    prompts = prompts_for_mode(temporal_scope)
+    if not isinstance(extraction_run_id, str) or not extraction_run_id.strip():
+        raise ValueError("extraction_run_id must be a non-empty string")
+    combined_prompt_sha256 = prompt_bundle_sha256(prompts.system, prompts.user_template)
     return {
-        "schema_version": "thought_intent_v1",
+        "schema_version": (
+            "thought_intent_temporal_v1"
+            if temporal_scope
+            else "thought_intent_v1"
+        ),
         "source_type": source_type,
         "source_file": portable_source_name(source_path, data_root),
         "trajectory_id": trajectory_identity(source_type, trajectory, source_path),
@@ -401,10 +533,22 @@ def prepare_output_record(
             "provider": "deepseek",
             "base_url": base_url,
             "model": model,
-            "prompt_version": "thought_to_intent_user_v1",
+            "no_proxy": no_proxy,
+            "json_response_format": json_response_format,
+            "temporal_scope": temporal_scope,
+            "extraction_run_id": extraction_run_id.strip(),
+            "prompt_version": (
+                "thought_to_temporal_intent_user_v1"
+                if temporal_scope
+                else "thought_to_intent_user_v1"
+            ),
             "system_prompt_sha256": hashlib.sha256(
-                PROMPTS.system.encode("utf-8")
+                prompts.system.encode("utf-8")
             ).hexdigest(),
+            "user_prompt_sha256": hashlib.sha256(
+                prompts.user_template.encode("utf-8")
+            ).hexdigest(),
+            "prompt_sha256": combined_prompt_sha256,
         },
         "status": "pending",
         "steps": [
@@ -422,8 +566,23 @@ def prepare_output_record(
     }
 
 
+def resume_identity(record: dict[str, Any]) -> tuple[Any, ...]:
+    """Return the fields that must match before checkpoint reuse."""
+    generation = record.get("generation") or {}
+    return (
+        record.get("schema_version"),
+        record.get("trajectory_id"),
+        generation.get("model"),
+        generation.get("system_prompt_sha256"),
+        generation.get("user_prompt_sha256"),
+        generation.get("prompt_sha256"),
+        generation.get("extraction_run_id", "default"),
+        generation.get("temporal_scope", False),
+    )
+
+
 def merge_resume_record(existing: dict[str, Any], fresh: dict[str, Any]) -> dict[str, Any]:
-    if existing.get("trajectory_id") != fresh.get("trajectory_id"):
+    if resume_identity(existing) != resume_identity(fresh):
         return fresh
     old_steps = {
         (step.get("thought_step"), step.get("thought")): step
@@ -462,6 +621,10 @@ def process_trajectory(
     context_chars: int,
     dry_run: bool,
     data_root: Path | None,
+    no_proxy: bool,
+    json_response_format: bool,
+    temporal_scope: bool = False,
+    extraction_run_id: str = "default",
 ) -> dict[str, Any]:
     trajectory = read_json(source_path)
     steps = (
@@ -478,6 +641,10 @@ def process_trajectory(
         model,
         base_url,
         data_root,
+        no_proxy,
+        json_response_format,
+        temporal_scope=temporal_scope,
+        extraction_run_id=extraction_run_id,
     )
     if output_path.exists():
         record = merge_resume_record(read_json(output_path), record)
@@ -507,6 +674,9 @@ def process_trajectory(
                 model=model,
                 timeout=timeout,
                 max_retries=max_retries,
+                no_proxy=no_proxy,
+                json_response_format=json_response_format,
+                temporal_scope=temporal_scope,
             )
             step.update(
                 {
@@ -563,11 +733,17 @@ def summarize(
         for key, value in (step.get("usage") or {}).items():
             if isinstance(value, int):
                 usage_fields[key] = usage_fields.get(key, 0) + value
-    return {
-        "schema_version": "thought_intent_manifest_v1",
+    manifest = {
+        "schema_version": (
+            "thought_intent_temporal_manifest_v1"
+            if args.temporal_scope
+            else "thought_intent_manifest_v1"
+        ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": args.model,
         "base_url": args.base_url,
+        "no_proxy": args.no_proxy,
+        "json_response_format": args.json_response_format,
         "selected_trajectory_count": len(selected),
         "source_counts": {
             "kimi": sum(item["source_type"] == "kimi" for item in selected),
@@ -585,6 +761,18 @@ def summarize(
             for item in selected
         ],
     }
+    if args.temporal_scope:
+        scope_counts = {scope: 0 for scope in sorted(TEMPORAL_SCOPES)}
+        for step in steps:
+            for intent in (step.get("intent_result") or {}).get(
+                "execution_intents"
+            ) or []:
+                scope = intent.get("temporal_scope")
+                if scope in scope_counts:
+                    scope_counts[scope] += 1
+        manifest["temporal_scope_counts"] = scope_counts
+        manifest["current_intent_count"] = scope_counts["current"]
+    return manifest
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -607,6 +795,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--context-chars", type=int, default=6000)
+    parser.add_argument("--no-proxy", action="store_true")
+    parser.add_argument(
+        "--no-json-response-format",
+        action="store_false",
+        dest="json_response_format",
+    )
+    parser.set_defaults(json_response_format=True)
+    parser.add_argument("--temporal-scope", action="store_true")
+    parser.add_argument("--extraction-run-id", default="default")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
@@ -663,6 +860,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             "context_chars": args.context_chars,
             "dry_run": args.dry_run,
             "data_root": data_root,
+            "no_proxy": args.no_proxy,
+            "json_response_format": args.json_response_format,
+            "temporal_scope": args.temporal_scope,
+            "extraction_run_id": args.extraction_run_id,
         }
         for item in selected
     ]

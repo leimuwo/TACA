@@ -29,8 +29,20 @@ cp .env.example .env
 ```
 
 Set `TA_DATA_ROOT` in the untracked `.env` or shell environment to the shared
-data directory. API credentials belong only in the environment variable
-`INTENT_API_KEY`; never add them to tracked files.
+data directory. Intent extraction credentials belong in `INTENT_API_KEY`, and
+provisional-negative generation credentials belong in `INF_API_KEY`; never add
+either value to tracked files.
+
+The optional training stack is installed into a repository-local venv:
+
+```bash
+python -m venv .venv
+python -m pip install -e '.[training]'
+```
+
+On the current Inspire image, clear the inherited `LD_LIBRARY_PATH` when using
+the venv so its CPU PyTorch libraries are not shadowed by system Python 3.12
+CUDA libraries.
 
 ## Data
 
@@ -76,7 +88,107 @@ PYTHONPATH=src python scripts/extract_thought_intents.py \
   --swe-count 3 --kimi-count 0 --dry-run
 ```
 
+Build the Phase 1 SWE annotation queue from completed Thought-to-Intent files:
+
+```bash
+PYTHONPATH=src python scripts/build_intent_action_dataset.py build \
+  --input-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/thought_intent" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/intent_action_phase1_v1"
+```
+
+Review `annotation_template.csv`, save the labels as
+`reviewed_annotations.jsonl`, and then export gold relations and
+trajectory/template-isolated splits:
+
+```json
+{"candidate_id": "swe:CASE-0001:T1-I1", "label": "direct_match", "annotator": "reviewer-name", "notes": "Action directly fulfills the Intent."}
+```
+
+The JSONL file contains one JSON object per reviewed candidate. Allowed labels
+are `direct_match`, `partial_match`, `no_match`, `unfulfilled`, and
+`ambiguous`; `annotator` and `notes` may be empty strings.
+
+```bash
+PYTHONPATH=src python scripts/build_intent_action_dataset.py finalize \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/intent_action_phase1_v1"
+```
+
+Build mode never promotes automatic pairs to gold. Finalize mode exports only
+human-reviewed `direct_match` rows as training positives.
+
+Prepare the separate feasibility-only provisional pilot from the current SWE
+annotation candidates:
+
+```bash
+PYTHONPATH=src python scripts/generate_provisional_negatives.py prepare \
+  --input-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/intent_action_phase1_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
+```
+
+After exporting `INF_API_KEY` securely, generate and locally validate LLM
+proposals. The command supports hash-qualified resume and bypasses the inherited
+proxy for the configured endpoint:
+
+```bash
+PYTHONPATH=src python scripts/generate_provisional_negatives.py generate \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
+
+PYTHONPATH=src python scripts/generate_provisional_negatives.py finalize \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1"
+```
+
+The configured DFLASH endpoint uses `/v1/chat/completions` and does not support
+grammar-constrained `response_format=json_object`. The client therefore relies
+on the strict-JSON prompt plus local parsing and validation by default; use
+`--json-response-format` only with a compatible endpoint.
+
+Run dependency-free sparse baselines and validate the bi-encoder training plan:
+
+```bash
+PYTHONPATH=src python scripts/run_retrieval_baselines.py \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/experiments/provisional_sparse_pilot_v1"
+
+env -u LD_LIBRARY_PATH PYTHONPATH=src .venv/bin/python scripts/train_biencoder.py \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/experiments/provisional_biencoder_pilot_v1" \
+  --dry-run
+```
+
+On a single H100, run the actual pilot with the CUDA-enabled PyTorch
+environment. `--device auto --precision auto` selects CUDA and BF16 when the
+GPU reports support; `--precision bf16` makes that requirement explicit.
+The trainer enables TF32, uses fused AdamW when available, accumulates four
+micro-batches by default, and writes `checkpoint-last` plus the validation-best
+`checkpoint-best`.
+
+```bash
+PYTHONPATH=src python scripts/train_biencoder.py \
+  --dataset-dir "$TA_DATA_ROOT/SWE-agent-trajectories/test_data/provisional_intent_action_pilot_v1" \
+  --output-dir "$TA_DATA_ROOT/SWE-agent-trajectories/experiments/provisional_biencoder_h100_v1" \
+  --device cuda \
+  --precision bf16 \
+  --epochs 3 \
+  --batch-size 32 \
+  --gradient-accumulation-steps 4
+```
+
+The command fails early if CUDA or BF16 is unavailable. Use `--device cpu
+--precision fp32` only for a small smoke test; the current environment is not
+intended for full BGE training.
+
+All provisional outputs are permanently labeled
+`FEASIBILITY ONLY — NOT GOLD EVALUATION` and must not be reported as Gold
+evaluation results.
+
 ## Research Roadmap
+
+The current ClawGym/SWE work adds temporal Intent extraction, reviewed hard
+negatives, held-out pair evaluation, and a trained Cross-Encoder coverage
+component. Start with the [October 14 integration summary](docs/2026-10-14-ta-pr-summary.md)
+for training, evaluation, and local HTTP usage. Bulk datasets and model weights
+are external; set `TA_MODEL_ROOT` to a local model cache (default `../model_hub`)
+and pass dataset paths explicitly when reproducing experiments.
 
 Phase 1 builds human-reviewed one-Intent–one-short-Action data, retrieval
 baselines, and a shared bi-encoder with parameter-sensitive hard negatives.
@@ -85,3 +197,10 @@ fulfillment without mixing those supervision types into the initial model.
 
 See the [Phase 1 data design](docs/designs/intent-action-phase1-data-design.md)
 and [implementation plan](docs/plans/intent-action-phase1-data.md).
+
+For machine-to-machine handoff, use the
+[ModelScope publishing procedure](docs/modelscope-data-publishing.md) and the
+[H100 reception guide](docs/h100-project-receive.md). The full external data
+tree is verified by the tracked
+[SHA-256 manifest](data/manifests/modelscope-full-v1/SHA256SUMS); credentials
+remain outside Git.
