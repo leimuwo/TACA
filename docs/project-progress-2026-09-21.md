@@ -1,8 +1,8 @@
 # Thought–Intent–Action Retrieval 项目进展汇报
 
-**汇报日期：** 2026-09-21  
+**汇报日期：** 2026-09-21
 **当前阶段：** Phase 1 provisional negative 与训练可行性实现
-**当前分支：** `feature/phase1-dataset`  
+**当前分支：** `feature/phase1-dataset`
 **最新已提交基线：** `04a89f4 docs: design provisional retrieval pilot`
 
 ## 一、项目目标
