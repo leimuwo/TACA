@@ -134,3 +134,5 @@ CUDA_VISIBLE_DEVICES=0 bash run.sh run
 ## 8. 示例之后先跑20窗口小测试集
 
 完成两条示例后，按 `experiments/ta_pipeline/testset/README.md` 运行20窗口、21关系的受控协议测试，再用 `evaluate_smoke.py` 生成报告。参考标签独立存放，不输入模型。此集由编码Agent编写，未独立人工审核，不是自然轨迹泛化测试。报告技术失败和提取/匹配/聚合差异，不为提高符合率改参考标签或隐藏失败。
+
+测试集已随仓库提交，不需额外下载。已有仓库先保留本地改动并执行 `git pull origin main`。首次安装、模型下载、小集运行和评估完整命令集中在 `experiments/ta_pipeline/README.md`；仅需将 `testset/windows.jsonl` 传给流水线，参考文件不传给模型。

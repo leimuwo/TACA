@@ -80,3 +80,17 @@ Current 意图任一 yes 即为 yes；完整非空窗口全部 no 才为 no，�
 ## 小测试集
 
 首次两个示例跑通后，运行 [20窗口协议 smoke 测试](testset/README.md)。它包含独立输入、参考Intent/关系/Step和评估脚本，覆盖新口径边界；为人工编写的开发诊断案例，不是独立人工轨迹Gold。
+
+测试集随Git仓库下载，无需从ModelScope另下。首次使用按上方 `git clone` 步骤；已有仓库先在仓库根目录执行 `git pull origin main`（保留本地改动，不强制重置），然后进入 `experiments/ta_pipeline`，激活已安装的Python环境。模型未下载时先执行 `python download_models.py`。
+
+```bash
+# 以下命令均在 TACA/experiments/ta_pipeline 目录执行
+INPUT_FILE="$PWD/testset/windows.jsonl" \
+OUTPUT_DIR="$PWD/runs/smoke20_v1" \
+CUDA_VISIBLE_DEVICES=0 bash run.sh run
+python evaluate_smoke.py \
+  --predictions runs/smoke20_v1/predictions.jsonl \
+  --output runs/smoke20_v1/evaluation.json
+```
+
+测试输入是 `testset/windows.jsonl`，参考标签是 `testset/references.jsonl`；不要将参考标签作为推理输入。详细逐例结果在 `runs/smoke20_v1/evaluation.json`。该报告路径已存在时使用新路径，评估器不会覆盖旧报告。
