@@ -1,5 +1,7 @@
 # 现有模型端到端 TA 流水线
 
+其他 Agent 接手请先阅读仓库根目录的 [guidance.md](../../guidance.md)。
+
 本地离线 JSONL 流水线：Thought → Qwen3-0.6B Intent 提取 → Current × 固定窗口内全部 Action → 已微调 BGE Reranker → Intent / Step 操作一致性。只对工具调用打分，不执行任何 Action。
 
 默认模型：
