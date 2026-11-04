@@ -1,0 +1,2 @@
+{"unit_id":"demo-001","thought":"I will read config.yaml. Then I will edit the timeout setting.","window_complete":true,"actions":[{"action_id":"A1","tool":"read","arguments":{"path":"config.yaml"}}]}
+{"unit_id":"demo-002","thought":"Let me search for the parser and run the tests.","window_complete":true,"actions":[{"action_id":"A1","function":"bash","args":{"command":"rg -n parser src/ && pytest -q"}}]}

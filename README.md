@@ -85,3 +85,8 @@ fulfillment without mixing those supervision types into the initial model.
 
 See the [Phase 1 data design](docs/designs/intent-action-phase1-data-design.md)
 and [implementation plan](docs/plans/intent-action-phase1-data.md).
+
+
+## Portable Intent–Action pipeline
+
+See [deployment and GPU quick start](experiments/ta_pipeline/README.md) for Qwen3-0.6B Intent extraction, the fine-tuned legacy BGE Reranker, ModelScope downloads with SHA-256 verification, and operation-only aggregation. This is an experimental legacy-model pipeline; current-rule semantic acceptance is pending.
