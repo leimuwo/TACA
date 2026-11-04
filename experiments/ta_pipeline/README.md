@@ -76,3 +76,7 @@ Reranker 默认 logit 阈值为旧值0，sigmoid未经校准，不是正确概�
 Current 意图任一 yes 即为 yes；完整非空窗口全部 no 才为 no，其余 uncertain。Step 全yes/全no/已有yes和no分别为完全一致/完全不一致/部分一致，其余 uncertain；无 Current 为 not_applicable。无 Action 保守为 uncertain。操作一致不代表对象正确或目标完成；多个 Intent 可共享一个正 Action。
 
 已通过7项依赖无关测试，模型文件检查通过。本开发环境尚未完成真实 checkpoint 加载、GPU前向、吞吐或新口径准确率测试。下一步先在GPU运行两个示例，再在开发窗口对比冻结Intent/预测Intent，区分提取和匹配错误。
+
+## 小测试集
+
+首次两个示例跑通后，运行 [20窗口协议 smoke 测试](testset/README.md)。它包含独立输入、参考Intent/关系/Step和评估脚本，覆盖新口径边界；为人工编写的开发诊断案例，不是独立人工轨迹Gold。

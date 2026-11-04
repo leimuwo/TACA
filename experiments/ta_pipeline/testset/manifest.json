@@ -1,0 +1,24 @@
+{
+  "version": "operation-pair-v2-smoke20-v1",
+  "provenance": "manually authored by coding agent; not sampled trajectories, not independently human reviewed",
+  "intended_use": "deployment smoke and exposed development diagnostics only; not independent test or training",
+  "windows": 20,
+  "pair_labels": {
+    "yes": 13,
+    "no": 7,
+    "uncertain": 1
+  },
+  "step_labels": {
+    "fully_consistent": 9,
+    "fully_inconsistent": 5,
+    "not_applicable": 2,
+    "partially_consistent": 1,
+    "uncertain": 3
+  },
+  "files": {
+    "windows.jsonl": "a567191c84aacec5606bc696171533877a77446b8d0491e803a421c39803941e",
+    "references.jsonl": "b8a0c1a82390cc3ee100013d8b7c04a4eea15d62f0f926aeeb25cc3b71c62efc"
+  },
+  "reference_extraction": "expected exact contiguous quotes under current extraction rules; extraction mismatch reported separately",
+  "threshold_use": "do not tune threshold on this smoke set and claim held-out performance"
+}
