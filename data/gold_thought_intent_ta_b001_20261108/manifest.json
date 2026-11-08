@@ -1,0 +1,45 @@
+{
+  "schema_version": "gold-thought-intent-ta-b001-v1",
+  "created_at": "2026-11-08T17:33:13.354335+00:00",
+  "units": 100,
+  "current_intents": 108,
+  "pairs": 108,
+  "pair_labels": {
+    "yes": 104,
+    "no": 4
+  },
+  "target_relations": {
+    "null": 108
+  },
+  "future_or_excluded_intents": 23,
+  "sources": {
+    "frozen_units": "Project/outputs/ta_consistency_v1_20261023/B001_operation_review_gqq_v1/frozen_units.jsonl",
+    "human_intents": "Project/outputs/ta_consistency_v1_20261023/B001_operation_confirmed_v1/intent_extraction_labels.jsonl",
+    "human_operation_labels": "Project/outputs/ta_consistency_v1_20261023/B001_operation_confirmed_v1/operation_labels.jsonl",
+    "confirmation_audit": "Project/outputs/ta_consistency_v1_20261023/B001_operation_confirmed_v1/human_confirmation_audit.jsonl"
+  },
+  "provenance_checks": {
+    "all_units_have_nonempty_thought": true,
+    "all_windows_complete": true,
+    "all_actions_have_tool_or_raw_text": true,
+    "all_intents_current_and_accepted": true,
+    "all_pairs_explicitly_user_confirmed": true,
+    "pair_ids_resolve_to_action": true,
+    "no_missing_current_intent_pair_labels": true
+  },
+  "label_semantics": "operation_match=yes/no under operation_only_v1; not complete parameter/option/constraint compliance, not task-success gold, not independent test",
+  "split_status": "exposed_development_calibration_pool; do not use as independent validation/test",
+  "not_included": [
+    "model-generated unconfirmed labels",
+    "uncertain labels",
+    "future intents as current labels",
+    "unreviewed B002-B043 units",
+    "full task-success labels",
+    "parameter-value compliance labels"
+  ],
+  "checksums": {
+    "units.jsonl": "2c74781c9fff2a655ce1c539a2b2ec6f8a632fe621dc4dd1792575ec2ba887c1",
+    "pairs.jsonl": "3945f0e2fe2f24f65a9e0848dd069b0642ff59ec30d1e0b824efb856e2fede31",
+    "future_or_excluded_intents.jsonl": "793f6faa3b63a9ae064443111ef5125be5147d1d6cb1b1c05d6cc59047d8f9fa"
+  }
+}
